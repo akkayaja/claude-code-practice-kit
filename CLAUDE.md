@@ -7,7 +7,7 @@
 
 ## 진행 상황
 - 이 폴더는 GitHub 공개 저장소 https://github.com/akkayaja/claude-code-practice-kit 와 연결돼 있어요 (`main` → `origin`).
-- 완료한 실습: 01 엑셀자동화, 10 Git기초. 학습일지는 `학습일지/`에 있어요.
+- 완료한 실습: 01 엑셀자동화, 02 보고서자동생성, 10 Git기초. 학습일지는 `학습일지/`에 있어요.
 - 사용자는 비유(게임 세이브 = 커밋, 연습 모드 = 브랜치, 클라우드 저장 = GitHub)로 설명하면 잘 이해해요.
 - `gh`(GitHub CLI)는 `~/.local/bin/gh`에 설치돼 있어요.
 
