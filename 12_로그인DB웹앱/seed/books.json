@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1,
+    "title": "데이터로 일하는 법",
+    "author": "김연습",
+    "category": "업무",
+    "available": true
+  },
+  {
+    "id": 2,
+    "title": "파이썬 첫걸음",
+    "author": "이코딩",
+    "category": "IT",
+    "available": false
+  },
+  {
+    "id": 3,
+    "title": "엑셀 자동화 입문",
+    "author": "박엑셀",
+    "category": "IT",
+    "available": false
+  },
+  {
+    "id": 4,
+    "title": "일 잘하는 사람의 메모",
+    "author": "최메모",
+    "category": "업무",
+    "available": true
+  },
+  {
+    "id": 5,
+    "title": "마케팅 기초",
+    "author": "정마케",
+    "category": "경영",
+    "available": false
+  },
+  {
+    "id": 6,
+    "title": "AI와 함께 일하기",
+    "author": "한에이",
+    "category": "IT",
+    "available": false
+  },
+  {
+    "id": 7,
+    "title": "회의를 줄이는 기술",
+    "author": "오회의",
+    "category": "업무",
+    "available": true
+  },
+  {
+    "id": 8,
+    "title": "숫자 읽는 습관",
+    "author": "서숫자",
+    "category": "경영",
+    "available": true
+  },
+  {
+    "id": 9,
+    "title": "글쓰기의 기본",
+    "author": "신글쓰",
+    "category": "자기계발",
+    "available": true
+  },
+  {
+    "id": 10,
+    "title": "시간 관리 노트",
+    "author": "권시간",
+    "category": "자기계발",
+    "available": true
+  }
+]

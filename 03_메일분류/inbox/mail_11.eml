@@ -1,0 +1,25 @@
+Subject: =?utf-8?b?W+qzteyngF0gMTLsm5Qg7JuM7YGs7IiNIOydvOyglSDslYjrgrQ=?=
+From: =?utf-8?b?6raM7KeA7Zi4?= <sender11@example.com>
+To: me@example.com
+Date: Fri, 06 Nov 2026 14:00:00 +0900
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============3346066437616633991=="
+
+--===============3346066437616633991==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+12월 12일(금) 전사 워크숍이 진행됩니다. 장소는 추후 공지.
+
+감사합니다.
+
+--===============3346066437616633991==
+Content-Type: text/csv
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename*=utf-8''%EC%9B%8C%ED%81%AC%EC%88%8D_%EC%9D%BC%EC%A0%95.csv
+MIME-Version: 1.0
+
+77u/7Iuc6rCELOuCtOyaqQoxMDowMCzqsJztmowKMTM6MDAs7YyA67OEIOuwnO2RnAo=
+
+--===============3346066437616633991==--

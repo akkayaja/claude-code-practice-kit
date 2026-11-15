@@ -1,0 +1,44 @@
+{
+  "서울": {
+    "city": "서울",
+    "temp": -1,
+    "humidity": 53,
+    "sky": "비"
+  },
+  "부산": {
+    "city": "부산",
+    "temp": 6,
+    "humidity": 64,
+    "sky": "흐림"
+  },
+  "대구": {
+    "city": "대구",
+    "temp": -3,
+    "humidity": 62,
+    "sky": "구름많음"
+  },
+  "인천": {
+    "city": "인천",
+    "temp": 7,
+    "humidity": 31,
+    "sky": "구름많음"
+  },
+  "광주": {
+    "city": "광주",
+    "temp": 0,
+    "humidity": 47,
+    "sky": "구름많음"
+  },
+  "대전": {
+    "city": "대전",
+    "temp": 10,
+    "humidity": 58,
+    "sky": "구름많음"
+  },
+  "제주": {
+    "city": "제주",
+    "temp": 4,
+    "humidity": 40,
+    "sky": "흐림"
+  }
+}
