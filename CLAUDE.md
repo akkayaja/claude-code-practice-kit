@@ -7,7 +7,9 @@
 
 ## 진행 상황
 - 이 폴더는 GitHub 공개 저장소 https://github.com/akkayaja/claude-code-practice-kit 와 연결돼 있어요 (`main` → `origin`).
-- 완료한 실습: 01 엑셀자동화, 02 보고서자동생성, 10 Git기초. 학습일지는 `학습일지/`에 있어요.
+- 완료한 실습: 01 엑셀자동화, 02 보고서자동생성, 03 메일분류, 10 Git기초. 학습일지는 `학습일지/`에 있어요.
+- `03_메일분류/`에는 전용 가상환경 `.venv`(파이썬 3.12, `anthropic` 설치)와 Claude API 키가 든 `.env`가 있어요 (둘 다 `.gitignore`로 제외). API 쓰는 스크립트는 `.venv/bin/python 파일이름.py`로 실행해요.
+- 맥의 `nano`는 한글 입력이 안 돼요. 파일을 고칠 땐 `open -a "Visual Studio Code" 파일이름`으로 VS Code를 쓰게 안내해요.
 - 사용자는 비유(게임 세이브 = 커밋, 연습 모드 = 브랜치, 클라우드 저장 = GitHub)로 설명하면 잘 이해해요.
 - `gh`(GitHub CLI)는 `~/.local/bin/gh`에 설치돼 있어요.
 
