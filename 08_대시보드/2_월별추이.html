@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>월별 매출 추이</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --surface: #fcfcfb; --text: #0b0b0b; --text-2: #52514e;
+    --grid: #e6e5e1; --series-1: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #1a1a19; --text: #f0efec; --text-2: #c3c2b7;
+      --grid: #33322f; --series-1: #3987e5;
+    }
+  }
+  body { margin: 0; padding: 24px 16px; background: var(--surface); color: var(--text);
+         font-family: -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  main { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.sub { color: var(--text-2); margin: 0 0 20px; font-size: 14px; }
+  .chart-box { position: relative; height: 360px; }
+  details { margin-top: 20px; color: var(--text-2); }
+  table { border-collapse: collapse; margin-top: 8px; }
+  td { padding: 4px 16px 4px 0; border-bottom: 1px solid var(--grid); }
+  td:last-child { text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<main>
+  <h1>2025년 월별 매출 추이</h1>
+  <p class="sub">4개 채널(자사몰·스마트스토어·쿠팡·오프라인) 합계 · 단위: 백만 원 · 점에 마우스를 올리면 정확한 금액이 보여요</p>
+  <div class="chart-box"><canvas id="chart"></canvas></div>
+  <details>
+    <summary>숫자표로 보기</summary>
+    <table><tr><td>1월</td><td>197,913,475원</td></tr>
+<tr><td>2월</td><td>188,920,614원</td></tr>
+<tr><td>3월</td><td>194,572,120원</td></tr>
+<tr><td>4월</td><td>196,033,212원</td></tr>
+<tr><td>5월</td><td>204,986,585원</td></tr>
+<tr><td>6월</td><td>203,547,645원</td></tr>
+<tr><td>7월</td><td>199,534,775원</td></tr>
+<tr><td>8월</td><td>205,502,671원</td></tr>
+<tr><td>9월</td><td>206,830,831원</td></tr>
+<tr><td>10월</td><td>204,151,757원</td></tr>
+<tr><td>11월</td><td>248,329,079원</td></tr>
+<tr><td>12월</td><td>287,060,601원</td></tr></table>
+  </details>
+</main>
+<script>
+  const 라벨 = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
+  const 값 = [197913475, 188920614, 194572120, 196033212, 204986585, 203547645, 199534775, 205502671, 206830831, 204151757, 248329079, 287060601];
+  const css = getComputedStyle(document.documentElement);
+  const 색 = (이름) => css.getPropertyValue(이름).trim();
+
+  new Chart(document.getElementById("chart"), {
+    type: "line",
+    data: {
+      labels: 라벨,
+      datasets: [{
+        label: "월 매출",
+        data: 값,
+        borderColor: 색("--series-1"),
+        backgroundColor: 색("--series-1"),
+        borderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        tension: 0,
+      }],
+    },
+    options: {
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: (c) => " " + c.parsed.y.toLocaleString("ko-KR") + "원" },
+        },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: 색("--text-2") } },
+        y: {
+          beginAtZero: true,
+          grid: { color: 색("--grid") },
+          ticks: { color: 색("--text-2"), callback: (v) => (v / 1000000).toLocaleString("ko-KR") },
+        },
+      },
+    },
+  });
+</script>
+</body>
+</html>

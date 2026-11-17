@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2025년 매출 대시보드</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --page: #f4f3ef; --surface: #fcfcfb; --text: #0b0b0b; --text-2: #52514e;
+    --border: #e6e5e1; --track: #efeeea; --series-1: #2a78d6; --muted-bar: #c9c8c2;
+    --hover: #f3f2ee; --on-accent: #ffffff; --up: #0ca30c; --down: #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #121211; --surface: #1a1a19; --text: #f0efec; --text-2: #c3c2b7;
+      --border: #33322f; --track: #2a2a28; --series-1: #3987e5; --muted-bar: #4a4945;
+      --hover: #242422;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px 16px 40px; background: var(--page); color: var(--text);
+         font-family: -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  main { max-width: 1040px; margin: 0 auto; }
+  header h1 { font-size: 24px; margin: 0 0 4px; }
+  header p { color: var(--text-2); margin: 0 0 16px; font-size: 14px; line-height: 1.5; }
+  .filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
+  .filter span { font-size: 13px; color: var(--text-2); margin-right: 4px; }
+  .filter button { font: inherit; font-size: 14px; padding: 7px 14px; border-radius: 999px;
+                    border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+  .filter button:hover { background: var(--hover); }
+  .filter button[aria-pressed="true"] { background: var(--series-1); border-color: var(--series-1); color: var(--on-accent); }
+  .headline { background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+               padding: 14px 18px; margin-bottom: 16px; font-size: 15px; }
+  .chg { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .chg i { font-style: normal; margin-right: 3px; }
+  .chg.up i { color: var(--up); }
+  .chg.down i { color: var(--down); }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .card, .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+  .card { padding: 16px; }
+  .label { font-size: 13px; color: var(--text-2); }
+  .big { font-size: 28px; font-weight: 700; margin: 6px 0 4px; font-variant-numeric: tabular-nums; }
+  .note { font-size: 12px; color: var(--text-2); }
+  .grid { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; }
+  .panel { padding: 18px; }
+  .panel h2 { font-size: 16px; margin: 0 0 2px; }
+  .panel .sub { font-size: 12px; color: var(--text-2); margin: 0 0 14px; }
+  .chart-box { position: relative; height: 300px; }
+  .row { display: grid; grid-template-columns: 84px 1fr 86px; align-items: center; gap: 10px; padding: 9px 6px; border-radius: 6px; }
+  .row:hover { background: var(--hover); }
+  .row.dim .name, .row.dim .value b { color: var(--text-2); font-weight: 400; }
+  .name { font-size: 14px; }
+  .track { height: 18px; background: var(--track); border-radius: 4px; }
+  .bar { height: 100%; background: var(--series-1); border-radius: 4px; }
+  .row.dim .bar { background: var(--muted-bar); }
+  .value { text-align: right; font-variant-numeric: tabular-nums; }
+  .value b { font-size: 16px; display: block; }
+  .value span { font-size: 11px; color: var(--text-2); }
+  .mom { margin-top: 16px; }
+  .mom table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .mom th { text-align: right; font-weight: 400; color: var(--text-2); font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .mom th:first-child, .mom td:first-child { text-align: left; }
+  .mom td { text-align: right; padding: 7px 8px; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+  .mom tr.big-move td { background: var(--hover); }
+  .mom .none { color: var(--text-2); font-size: 12px; }
+  @media (max-width: 860px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 420px) { .big { font-size: 22px; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>2025년 매출 대시보드</h1>
+    <p>기간 2025-01-01 ~ 2025-12-31 (12개월) · 지금 보는 범위: <b id="scope"></b><br>
+    데이터 파일: 일별_채널별_매출_2025.csv</p>
+  </header>
+
+  <nav class="filter" aria-label="채널 필터"><span>채널</span><button data-ch="전체" aria-pressed="true">전체</button><button data-ch="쿠팡" aria-pressed="false">쿠팡</button><button data-ch="자사몰" aria-pressed="false">자사몰</button><button data-ch="오프라인" aria-pressed="false">오프라인</button><button data-ch="스마트스토어" aria-pressed="false">스마트스토어</button></nav>
+  <div class="headline" id="headline"></div>
+
+  <section class="kpis">
+    <div class="card"><div class="label">총매출</div><div class="big" id="k-sales"></div><div class="note" id="k-sales-n"></div></div>
+    <div class="card"><div class="label">총주문수</div><div class="big" id="k-orders"></div><div class="note">기간 동안 들어온 주문</div></div>
+    <div class="card"><div class="label">객단가</div><div class="big" id="k-aov"></div><div class="note">총매출 ÷ 총주문수</div></div>
+    <div class="card"><div class="label">전환율</div><div class="big" id="k-cvr"></div><div class="note" id="k-cvr-n"></div></div>
+  </section>
+
+  <section class="grid">
+    <div class="panel">
+      <h2 id="trend-title">월별 매출 추이</h2>
+      <p class="sub">단위: 백만 원 · 점에 마우스를 올리면 금액과 전월 대비</p>
+      <div class="chart-box"><canvas id="trend"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>채널별 매출 비중</h2>
+      <p class="sub">전체 매출 중 % · 고른 채널은 파란색</p>
+      <div id="bars"></div>
+    </div>
+  </section>
+
+  <section class="panel mom">
+    <h2 id="mom-title">월별 전월 대비 증감률</h2>
+    <p class="sub">(이번 달 - 지난달) ÷ 지난달 × 100 · 10% 넘게 움직인 달은 배경 강조</p>
+    <table>
+      <thead><tr><th>월</th><th>매출</th><th>전월 대비</th></tr></thead>
+      <tbody id="mom-body"></tbody>
+    </table>
+  </section>
+</main>
+<script>
+  const 월라벨 = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
+  const 채널목록 = ["쿠팡", "자사몰", "오프라인", "스마트스토어"];
+  const 데이터 = {"쿠팡": {"주문수": [1847, 1929, 1781, 1855, 2029, 2075, 1816, 1956, 2154, 2040, 2376, 2813], "매출액": [63854851, 67894832, 60737411, 66025623, 71852024, 72804751, 64286999, 68318076, 77770051, 68946199, 80303511, 98590387], "방문자수": [46368, 53503, 46410, 48447, 54976, 60242, 47833, 50297, 62352, 63828, 72889, 74537]}, "자사몰": {"주문수": [1266, 1167, 1160, 1323, 1313, 1295, 1187, 1385, 1380, 1365, 1615, 1850], "매출액": [43183916, 40847591, 39319852, 46223198, 44898420, 45745827, 40869468, 47802277, 47967681, 47341884, 55741272, 67023902], "방문자수": [35270, 33776, 30504, 38269, 37657, 34677, 30390, 37971, 38768, 36767, 46724, 48938]}, "오프라인": {"주문수": [1348, 1143, 1440, 1215, 1356, 1232, 1288, 1312, 1197, 1271, 1655, 1698], "매출액": [47094372, 39656692, 49974332, 42083088, 47522752, 42811088, 45760302, 46740896, 41349930, 44475311, 57755978, 59504172], "방문자수": [37986, 28960, 41347, 31126, 36574, 38072, 34682, 32468, 32888, 33595, 46323, 48488]}, "스마트스토어": {"주문수": [1270, 1154, 1292, 1241, 1126, 1188, 1384, 1256, 1143, 1254, 1583, 1789], "매출액": [43780336, 40521499, 44540525, 41701303, 40713389, 42185979, 48618006, 42641422, 39743169, 43388363, 54528318, 61942140], "방문자수": [34413, 28307, 34477, 34583, 28308, 34119, 37299, 36055, 33277, 32951, 41366, 49446]}};
+
+  const 원 = (n) => Math.round(n).toLocaleString("ko-KR");
+  const 합 = (배열) => 배열.reduce((a, b) => a + b, 0);
+  const css = getComputedStyle(document.documentElement);
+  const 색 = (이름) => css.getPropertyValue(이름).trim();
+  const 모으기 = (채널들, 항목) => 월라벨.map((_, i) => 합(채널들.map((c) => 데이터[c][항목][i])));
+  const 증감률 = (월매출) => 월매출.map((v, i) => (i === 0 || 월매출[i - 1] === 0 ? null : (v - 월매출[i - 1]) / 월매출[i - 1] * 100));
+  function 증감표시(p) {
+    if (p === null) return '<span class="none">비교할 전달 없음</span>';
+    const 위로 = p >= 0;
+    return `<span class="chg ${위로 ? "up" : "down"}"><i>${위로 ? "▲" : "▼"}</i>${위로 ? "+" : ""}${p.toFixed(1)}%</span>`;
+  }
+  let 지금증감 = [];
+
+  const 그래프 = new Chart(document.getElementById("trend"), {
+    type: "line",
+    data: { labels: 월라벨, datasets: [{
+      label: "월 매출", data: [],
+      borderColor: 색("--series-1"), backgroundColor: 색("--series-1"),
+      borderWidth: 2, pointRadius: 4, pointHoverRadius: 6, tension: 0,
+    }] },
+    options: {
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: (c) => " " + 원(c.parsed.y) + "원",
+          afterLabel: (c) => {
+            const p = 지금증감[c.dataIndex];
+            return p === null ? " 전월 대비: 비교할 전달 없음" : " 전월 대비: " + (p >= 0 ? "▲ +" : "▼ ") + p.toFixed(1) + "%";
+          },
+        } },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: 색("--text-2") } },
+        y: { beginAtZero: true, grid: { color: 색("--border") },
+              ticks: { color: 색("--text-2"), callback: (v) => (v / 1000000).toLocaleString("ko-KR") } },
+      },
+    },
+  });
+
+  const 채널매출 = Object.fromEntries(채널목록.map((c) => [c, 합(데이터[c].매출액)]));
+  const 전체매출 = 합(Object.values(채널매출));
+  const 최대 = Math.max(...Object.values(채널매출));
+  function 막대그리기(선택) {
+    document.getElementById("bars").innerHTML = 채널목록.map((c) => {
+      const 비중 = (채널매출[c] / 전체매출 * 100).toFixed(1);
+      const 흐리게 = 선택 !== "전체" && 선택 !== c ? " dim" : "";
+      return `<div class="row${흐리게}" title="${c}: ${원(채널매출[c])}원 (전체의 ${비중}%)">
+        <div class="name">${c}</div>
+        <div class="track"><div class="bar" style="width:${(채널매출[c] / 최대 * 100).toFixed(2)}%"></div></div>
+        <div class="value"><b>${비중}%</b><span>${(채널매출[c] / 1e8).toFixed(2)}억 원</span></div>
+      </div>`;
+    }).join("");
+  }
+
+  function 보여주기(선택) {
+    const 채널들 = 선택 === "전체" ? 채널목록 : [선택];
+    const 월매출 = 모으기(채널들, "매출액");
+    const 매출 = 합(월매출);
+    const 주문 = 합(모으기(채널들, "주문수"));
+    const 방문 = 합(모으기(채널들, "방문자수"));
+    const 이름 = 선택 === "전체" ? `${채널목록.length}개 채널 전체` : 선택;
+
+    document.getElementById("k-sales").textContent = (매출 / 1e8).toFixed(2) + "억 원";
+    document.getElementById("k-sales-n").textContent = 원(매출) + "원";
+    document.getElementById("k-orders").textContent = 원(주문) + "건";
+    document.getElementById("k-aov").textContent = 원(매출 / 주문) + "원";
+    document.getElementById("k-cvr").textContent = (주문 / 방문 * 100).toFixed(2) + "%";
+    document.getElementById("k-cvr-n").textContent = "주문 ÷ 방문자 " + 원(방문) + "명";
+    document.getElementById("scope").textContent = 이름;
+    document.getElementById("trend-title").textContent = "월별 매출 추이 · " + 이름;
+
+    지금증감 = 증감률(월매출);
+    const 끝 = 월매출.length - 1;
+    document.getElementById("headline").innerHTML = 끝 < 1
+      ? `최근 달 <b>${월라벨[끝]}</b> 매출 <b>${원(월매출[끝])}원</b> · 비교할 전달이 없어요`
+      : `최근 달 <b>${월라벨[끝]}</b> 매출 <b>${원(월매출[끝])}원</b> · 전월(${월라벨[끝 - 1]} ${원(월매출[끝 - 1])}원) 대비 ${증감표시(지금증감[끝])}`;
+    document.getElementById("mom-title").textContent = "월별 전월 대비 증감률 · " + 이름;
+    document.getElementById("mom-body").innerHTML = 월라벨.map((m, i) => {
+      const 강조 = 지금증감[i] !== null && Math.abs(지금증감[i]) >= 10 ? ' class="big-move"' : "";
+      return `<tr${강조}><td>${m}</td><td>${원(월매출[i])}원</td><td>${증감표시(지금증감[i])}</td></tr>`;
+    }).join("");
+
+    그래프.data.datasets[0].data = 월매출;
+    그래프.update();
+    막대그리기(선택);
+    document.querySelectorAll(".filter button").forEach((b) =>
+      b.setAttribute("aria-pressed", b.dataset.ch === 선택 ? "true" : "false"));
+  }
+
+  document.querySelectorAll(".filter button").forEach((b) => b.addEventListener("click", () => 보여주기(b.dataset.ch)));
+  보여주기("전체");
+</script>
+</body>
+</html>

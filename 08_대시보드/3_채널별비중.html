@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>채널별 매출 비중</title>
+<style>
+  :root {
+    --surface: #fcfcfb; --text: #0b0b0b; --text-2: #52514e;
+    --track: #efeeea; --series-1: #2a78d6; --hover: #f3f2ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #1a1a19; --text: #f0efec; --text-2: #c3c2b7;
+      --track: #2a2a28; --series-1: #3987e5; --hover: #242422;
+    }
+  }
+  body { margin: 0; padding: 24px 16px; background: var(--surface); color: var(--text);
+         font-family: -apple-system, "Apple SD Gothic Neo", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.sub { color: var(--text-2); margin: 0 0 24px; font-size: 14px; }
+  .row { display: grid; grid-template-columns: 96px 1fr 120px; align-items: center;
+          gap: 12px; padding: 10px 8px; border-radius: 6px; }
+  .row:hover { background: var(--hover); }
+  .name { font-size: 15px; }
+  .track { height: 20px; background: var(--track); border-radius: 4px; }
+  .bar { height: 100%; background: var(--series-1); border-radius: 4px; }
+  .value { text-align: right; font-variant-numeric: tabular-nums; }
+  .value b { font-size: 17px; display: block; }
+  .value span { font-size: 12px; color: var(--text-2); }
+  .total { margin-top: 16px; padding: 0 8px; color: var(--text-2); font-size: 14px; }
+  @media (max-width: 480px) {
+    .row { grid-template-columns: 1fr auto; }
+    .track { grid-column: 1 / -1; grid-row: 2; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>2025년 채널별 매출 비중</h1>
+  <p class="sub">전체 매출 중 각 채널이 차지하는 % · 매출이 큰 순서 · 막대에 마우스를 올리면 원 단위 금액이 보여요</p>
+  
+    <div class="row" title="쿠팡: 861,384,715원 (전체의 33.9%)">
+      <div class="name">쿠팡</div>
+      <div class="track"><div class="bar" style="width:100.00%"></div></div>
+      <div class="value"><b>33.9%</b><span>8.61억 원</span></div>
+    </div>
+    <div class="row" title="자사몰: 566,965,288원 (전체의 22.3%)">
+      <div class="name">자사몰</div>
+      <div class="track"><div class="bar" style="width:65.82%"></div></div>
+      <div class="value"><b>22.3%</b><span>5.67억 원</span></div>
+    </div>
+    <div class="row" title="오프라인: 564,728,913원 (전체의 22.3%)">
+      <div class="name">오프라인</div>
+      <div class="track"><div class="bar" style="width:65.56%"></div></div>
+      <div class="value"><b>22.3%</b><span>5.65억 원</span></div>
+    </div>
+    <div class="row" title="스마트스토어: 544,304,449원 (전체의 21.5%)">
+      <div class="name">스마트스토어</div>
+      <div class="track"><div class="bar" style="width:63.19%"></div></div>
+      <div class="value"><b>21.5%</b><span>5.44억 원</span></div>
+    </div>
+  <p class="total">전체 매출 2,537,383,365원 = 100%</p>
+</main>
+</body>
+</html>
