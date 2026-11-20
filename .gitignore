@@ -12,6 +12,9 @@ __pycache__/
 .env.*
 *.key
 
+# 12번: Supabase 창고 주소와 출입 키를 담은 파일
+12_로그인DB웹앱/config.js
+
 # 맥이 자동으로 만드는 숨김 파일
 .DS_Store
 

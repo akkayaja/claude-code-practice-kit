@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>대여 기록 대시보드</title>
+  <style>
+    body { font-family: -apple-system, "Apple SD Gothic Neo", sans-serif; max-width: 960px; margin: 0 auto; padding: 24px 16px; background: #f4f5f7; color: #222; }
+    h1 { margin: 0 0 4px; }
+    .sub { color: #777; margin: 0 0 20px; }
+    .box { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .kpi { background: #fff; border-radius: 12px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .kpi .label { color: #777; font-size: 13px; }
+    .kpi .value { font-size: 28px; font-weight: bold; margin-top: 4px; }
+    .kpi .hint { color: #999; font-size: 12px; margin-top: 4px; }
+    .kpi.red .value { color: #c0392b; }
+    .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 6px; border-bottom: 1px solid #eee; }
+    .late { background: #c0392b; color: #fff; border-radius: 6px; padding: 2px 8px; font-weight: bold; font-size: 13px; }
+    .no { color: #999; }
+    .error { color: #c0392b; font-weight: bold; }
+    button { font-size: 15px; padding: 8px 10px; border-radius: 8px; border: none; cursor: pointer; background: #eee; color: #333; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .me { margin-left: auto; }
+    .hidden { display: none; }
+    .criteria { color: #666; font-size: 13px; line-height: 1.6; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="../config.js"></script>
+</head>
+<body>
+  <h1>📊 대여 기록 대시보드</h1>
+  <p class="sub">관리자 전용 · 대여 장부를 숫자와 그래프로 보여 줘요</p>
+
+  <!-- 들어올 수 없을 때 안내 -->
+  <div id="gate" class="box">확인 중…</div>
+
+  <div id="dash" class="hidden">
+    <div class="box row">
+      <span>👑 <strong id="myEmail"></strong> 님 (관리자)</span>
+      <a class="me" href="../5_관리자/">← 도서 대여 화면으로</a>
+      <button onclick="load()">🔄 새로고침</button>
+    </div>
+
+    <!-- 핵심 숫자 (KPI) -->
+    <div class="kpis">
+      <div class="kpi"><div class="label">누적 대여</div><div class="value" id="kTotal">-</div><div class="hint">장부에 적힌 대여 횟수</div></div>
+      <div class="kpi"><div class="label">지금 대여 중</div><div class="value" id="kActive">-</div><div class="hint">장부 기준, 반납 전</div></div>
+      <div class="kpi red"><div class="label">연체</div><div class="value" id="kLate">-</div><div class="hint">반납 예정일이 지난 책</div></div>
+      <div class="kpi"><div class="label">반납 완료</div><div class="value" id="kReturned">-</div><div class="hint">돌아온 책</div></div>
+      <div class="kpi"><div class="label">이용한 직원</div><div class="value" id="kUsers">-</div><div class="hint">한 번이라도 빌린 사람</div></div>
+    </div>
+
+    <div class="charts">
+      <div class="box"><strong>📚 책별 누적 대여 횟수 (인기 순)</strong><canvas id="bookChart"></canvas></div>
+      <div class="box"><strong>🗂️ 카테고리별 누적 대여 횟수</strong><canvas id="catChart"></canvas></div>
+    </div>
+
+    <div class="box">
+      <strong>🧾 지금 대여 중인 책 (반납 예정일 순)</strong>
+      <table>
+        <thead><tr><th>책</th><th>빌린 사람</th><th>빌린 날</th><th>반납 예정일</th><th>상태</th></tr></thead>
+        <tbody id="activeList"></tbody>
+      </table>
+    </div>
+
+    <div class="box criteria" id="criteria"></div>
+  </div>
+
+  <script>
+    const db = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+    let bookChart, catChart;
+
+    // 글자 속 < > " 같은 기호를 '그냥 글자'로 바꿔요 (코드로 실행되지 않게)
+    function esc(s) {
+      return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function today() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+    function daysLeft(dueDate) {
+      return Math.round((new Date(dueDate) - new Date(today())) / 86400000);
+    }
+
+    function gate(html) {
+      document.getElementById("gate").innerHTML = html;
+      document.getElementById("gate").classList.remove("hidden");
+      document.getElementById("dash").classList.add("hidden");
+    }
+
+    // 1) 로그인했는지, 관리자인지 확인하고 들여보내요
+    async function start() {
+      const { data: { session } } = await db.auth.getSession();
+      if (!session) {
+        gate('로그인이 필요해요. <a href="../5_관리자/">도서 대여 화면</a>에서 로그인한 뒤 다시 와 주세요.');
+        return;
+      }
+      const { data: isAdmin } = await db.rpc("is_admin");
+      if (isAdmin !== true) {
+        gate('🔒 관리자만 볼 수 있는 화면이에요. <a href="../5_관리자/">도서 대여 화면으로</a>');
+        return;
+      }
+      document.getElementById("myEmail").textContent = session.user.email;
+      document.getElementById("gate").classList.add("hidden");
+      document.getElementById("dash").classList.remove("hidden");
+      load();
+    }
+
+    // 2) 책장과 대여 장부 전체를 가져와서 계산해요
+    async function load() {
+      const [bookRes, rentRes] = await Promise.all([
+        db.from("books").select("*").order("id"),
+        db.from("rentals").select("*").order("rented_at")
+      ]);
+      if (bookRes.error || rentRes.error) {
+        gate(`<span class="error">⚠️ ${(bookRes.error || rentRes.error).message}</span>`);
+        return;
+      }
+      const books = bookRes.data;
+      const rentals = rentRes.data;
+      const titleOf = id => (books.find(b => b.id === id) || {}).title || "(삭제된 책)";
+      const catOf = id => (books.find(b => b.id === id) || {}).category || "(삭제된 책)";
+
+      const active = rentals.filter(r => !r.returned_at);
+      const late = active.filter(r => daysLeft(r.due_date) < 0);
+
+      // 핵심 숫자
+      document.getElementById("kTotal").textContent = rentals.length + "건";
+      document.getElementById("kActive").textContent = active.length + "권";
+      document.getElementById("kLate").textContent = late.length + "권";
+      document.getElementById("kReturned").textContent = (rentals.length - active.length) + "권";
+      document.getElementById("kUsers").textContent = new Set(rentals.map(r => r.user_id)).size + "명";
+
+      // 책별 횟수 (많은 순)
+      const byBook = {};
+      rentals.forEach(r => { const t = titleOf(r.book_id); byBook[t] = (byBook[t] || 0) + 1; });
+      const bookPairs = Object.entries(byBook).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ko"));
+
+      // 카테고리별 횟수
+      const byCat = {};
+      rentals.forEach(r => { const c = catOf(r.book_id); byCat[c] = (byCat[c] || 0) + 1; });
+      const catPairs = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+
+      // 그래프 그리기 (다시 그릴 땐 예전 그래프를 지우고)
+      if (bookChart) bookChart.destroy();
+      if (catChart) catChart.destroy();
+      bookChart = new Chart(document.getElementById("bookChart"), {
+        type: "bar",
+        data: { labels: bookPairs.map(p => p[0]), datasets: [{ label: "대여 횟수", data: bookPairs.map(p => p[1]), backgroundColor: "#8a5a2b" }] },
+        options: { indexAxis: "y", plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+      });
+      catChart = new Chart(document.getElementById("catChart"), {
+        type: "doughnut",
+        data: { labels: catPairs.map(p => p[0]), datasets: [{ data: catPairs.map(p => p[1]), backgroundColor: ["#8a5a2b", "#1f6f9f", "#2f6f4f", "#b8860b", "#888"] }] }
+      });
+
+      // 지금 대여 중 표
+      const activeSorted = [...active].sort((a, b) => a.due_date.localeCompare(b.due_date));
+      document.getElementById("activeList").innerHTML = activeSorted.length === 0
+        ? `<tr><td colspan="5" class="no">지금 대여 중인 책이 없어요.</td></tr>`
+        : activeSorted.map(r => {
+            const left = daysLeft(r.due_date);
+            const status = left < 0 ? `<span class="late">연체 ${-left}일</span>` : (left === 0 ? "오늘까지" : `${left}일 남음`);
+            return `<tr><td>${esc(titleOf(r.book_id))}</td><td>${esc(r.user_email || "-")}</td><td>${r.rented_at.slice(0, 10)}</td><td>${r.due_date}</td><td>${status}</td></tr>`;
+          }).join("");
+
+      // 어떤 기준으로 셌는지 밝혀요
+      const outside = books.filter(b => !b.available).length - active.length;
+      document.getElementById("criteria").innerHTML = `
+        <strong>📏 숫자를 센 기준</strong><br>
+        · 모든 숫자는 <b>대여 장부(rentals)</b> 기준이에요. 반납한 기록도 '누적'에 포함돼요.<br>
+        · '지금 대여 중'은 반납 시각이 비어 있는 기록만 셌어요.<br>
+        · 책장에는 '대여 중'인 책이 ${books.filter(b => !b.available).length}권인데, 그중 <b>${outside}권</b>은 처음 데이터(seed)부터 대여 중이라 장부 기록이 없어서 여기 숫자에서 빠져 있어요.<br>
+        · 연체는 오늘(${today()}, 내 컴퓨터 날짜)이 반납 예정일보다 뒤인 경우예요.`;
+    }
+
+    start();
+  </script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>사내 도서 대여 (로컬 연습판)</title>
+  <style>
+    body { font-family: -apple-system, "Apple SD Gothic Neo", sans-serif; max-width: 860px; margin: 0 auto; padding: 24px 16px; background: #f7f5f0; color: #222; }
+    h1 { margin: 0 0 4px; }
+    .sub { color: #777; margin: 0 0 20px; }
+    .box { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    input, select, button { font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid #ccc; }
+    button { cursor: pointer; background: #2f6f4f; color: #fff; border: none; }
+    button.del { background: #c0392b; padding: 6px 10px; }
+    button.ghost { background: #eee; color: #333; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 6px; border-bottom: 1px solid #eee; }
+    .ok { color: #2f6f4f; font-weight: bold; }
+    .no { color: #999; }
+    .count { margin: 0 0 8px; color: #555; }
+  </style>
+</head>
+<body>
+  <h1>📚 사내 도서 대여</h1>
+  <p class="sub">로컬 연습판: 로그인 없이, 이 브라우저에만 저장돼요</p>
+
+  <!-- 책 추가하기 -->
+  <div class="box">
+    <strong>책 추가</strong>
+    <div class="row" style="margin-top:8px">
+      <input id="newTitle" placeholder="제목">
+      <input id="newAuthor" placeholder="저자">
+      <select id="newCategory">
+        <option>업무</option><option>IT</option><option>경영</option><option>자기계발</option>
+      </select>
+      <button onclick="addBook()">추가</button>
+    </div>
+  </div>
+
+  <!-- 검색과 필터, 목록 -->
+  <div class="box">
+    <div class="row" style="margin-bottom:12px">
+      <input id="search" placeholder="🔍 제목·저자 검색" oninput="render()">
+      <select id="filter" onchange="render()">
+        <option value="">전체 카테고리</option>
+        <option>업무</option><option>IT</option><option>경영</option><option>자기계발</option>
+      </select>
+      <button class="ghost" onclick="resetData()">처음 데이터로 되돌리기</button>
+    </div>
+    <p class="count" id="count"></p>
+    <table>
+      <thead><tr><th>제목</th><th>저자</th><th>카테고리</th><th>대여 가능</th><th></th></tr></thead>
+      <tbody id="list"></tbody>
+    </table>
+  </div>
+
+  <script>
+    // 브라우저 안의 작은 서랍(localStorage)에 붙일 이름표
+    const KEY = "books_local";
+    let books = [];
+
+    // 처음 열 때: 서랍에 책이 있으면 꺼내고, 없으면 seed/books.json을 읽어 와요
+    async function load() {
+      const saved = localStorage.getItem(KEY);
+      if (saved) {
+        books = JSON.parse(saved);
+      } else {
+        const res = await fetch("../seed/books.json");
+        books = await res.json();
+        save();
+      }
+      render();
+    }
+
+    // 지금 책 목록을 서랍에 넣어 둬요 (새로고침해도 남게)
+    function save() {
+      localStorage.setItem(KEY, JSON.stringify(books));
+    }
+
+    // 검색어·필터에 맞는 책만 골라서 표로 그려요
+    function render() {
+      const q = document.getElementById("search").value.trim();
+      const cat = document.getElementById("filter").value;
+      const shown = books.filter(b =>
+        (b.title.includes(q) || b.author.includes(q)) &&
+        (cat === "" || b.category === cat)
+      );
+      const availableCount = shown.filter(b => b.available).length;
+      document.getElementById("count").textContent =
+        `보이는 책 ${shown.length}권 · 대여 가능 ${availableCount}권`;
+      document.getElementById("list").innerHTML = shown.map(b => `
+        <tr>
+          <td>${b.title}</td>
+          <td>${b.author}</td>
+          <td>${b.category}</td>
+          <td class="${b.available ? "ok" : "no"}">${b.available ? "가능" : "대여 중"}</td>
+          <td><button class="del" onclick="deleteBook(${b.id})">삭제</button></td>
+        </tr>`).join("");
+    }
+
+    // 새 책 추가: 번호(id)는 지금 가장 큰 번호 + 1
+    function addBook() {
+      const title = document.getElementById("newTitle").value.trim();
+      const author = document.getElementById("newAuthor").value.trim();
+      const category = document.getElementById("newCategory").value;
+      if (!title || !author) { alert("제목과 저자를 입력해 주세요"); return; }
+      const nextId = Math.max(0, ...books.map(b => b.id)) + 1;
+      books.push({ id: nextId, title, author, category, available: true });
+      save();
+      document.getElementById("newTitle").value = "";
+      document.getElementById("newAuthor").value = "";
+      render();
+    }
+
+    // 책 삭제: 한 번 물어보고 지워요
+    function deleteBook(id) {
+      const book = books.find(b => b.id === id);
+      if (!confirm(`'${book.title}'을(를) 삭제할까요?`)) return;
+      books = books.filter(b => b.id !== id);
+      save();
+      render();
+    }
+
+    // 서랍을 비우고 처음 10권으로 다시 시작
+    function resetData() {
+      if (!confirm("처음 10권 상태로 되돌릴까요?")) return;
+      localStorage.removeItem(KEY);
+      load();
+    }
+
+    load();
+  </script>
+</body>
+</html>

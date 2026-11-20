@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>사내 도서 대여 (로그인판)</title>
+  <style>
+    body { font-family: -apple-system, "Apple SD Gothic Neo", sans-serif; max-width: 860px; margin: 0 auto; padding: 24px 16px; background: #f3f0f7; color: #222; }
+    h1 { margin: 0 0 4px; }
+    .sub { color: #777; margin: 0 0 20px; }
+    .box { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    input, select, button { font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid #ccc; }
+    button { cursor: pointer; background: #5b3f9f; color: #fff; border: none; }
+    button.del { background: #c0392b; padding: 6px 10px; }
+    button.ghost { background: #eee; color: #333; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 6px; border-bottom: 1px solid #eee; }
+    .ok { color: #2f6f4f; font-weight: bold; }
+    .no { color: #999; }
+    .count { margin: 0 0 8px; color: #555; }
+    .error { color: #c0392b; font-weight: bold; }
+    .login { max-width: 360px; margin: 40px auto; }
+    .login input { width: 100%; box-sizing: border-box; margin-bottom: 8px; }
+    .hidden { display: none; }
+    .me { margin-left: auto; color: #555; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+  <script src="../config.js"></script>
+</head>
+<body>
+  <h1>🔐 사내 도서 대여</h1>
+  <p class="sub">로그인판: 로그인한 직원만 책 목록을 볼 수 있어요</p>
+
+  <!-- 화면 ①: 로그인 / 회원가입 (로그인 안 했을 때만 보여요) -->
+  <div id="loginScreen" class="box login hidden">
+    <strong>로그인 / 회원가입</strong>
+    <div style="margin-top:12px">
+      <input id="email" type="email" placeholder="이메일">
+      <input id="password" type="password" placeholder="비밀번호 (6자 이상)">
+      <div class="row">
+        <button onclick="signIn()">로그인</button>
+        <button class="ghost" onclick="signUp()">회원가입</button>
+      </div>
+      <p id="loginMsg"></p>
+    </div>
+  </div>
+
+  <!-- 화면 ②: 책 목록 (로그인했을 때만 보여요) -->
+  <div id="mainScreen" class="hidden">
+    <div class="box row">
+      <span>👋 <strong id="myEmail"></strong> 님</span>
+      <button class="ghost me" onclick="signOut()">로그아웃</button>
+    </div>
+
+    <div class="box">
+      <strong>책 추가</strong>
+      <div class="row" style="margin-top:8px">
+        <input id="newTitle" placeholder="제목">
+        <input id="newAuthor" placeholder="저자">
+        <select id="newCategory">
+          <option>업무</option><option>IT</option><option>경영</option><option>자기계발</option>
+        </select>
+        <button onclick="addBook()">추가</button>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="row" style="margin-bottom:12px">
+        <input id="search" placeholder="🔍 제목·저자 검색" oninput="render()">
+        <select id="filter" onchange="render()">
+          <option value="">전체 카테고리</option>
+          <option>업무</option><option>IT</option><option>경영</option><option>자기계발</option>
+        </select>
+      </div>
+      <p class="count" id="count">창고에서 책을 가져오는 중…</p>
+      <table>
+        <thead><tr><th>제목</th><th>저자</th><th>카테고리</th><th>대여 가능</th><th></th></tr></thead>
+        <tbody id="list"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const db = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+    let books = [];
+
+    // ── 로그인 부분 ──────────────────────────────
+
+    // Supabase의 영어 오류를 쉬운 한국어로 바꿔요
+    function korean(message) {
+      if (message.includes("Invalid login credentials")) return "이메일 또는 비밀번호가 틀렸어요.";
+      if (message.includes("already registered")) return "이미 가입된 이메일이에요. [로그인]을 눌러 주세요.";
+      if (message.includes("at least 6")) return "비밀번호는 6자 이상이어야 해요.";
+      if (message.includes("Email not confirmed")) return "이메일 인증이 아직 안 됐어요. (Supabase에서 'Confirm email'을 껐는지 확인)";
+      if (message.includes("invalid")) return "이메일 형식이 올바르지 않아요.";
+      return message;
+    }
+
+    function loginMessage(text, isError) {
+      const p = document.getElementById("loginMsg");
+      p.textContent = text;
+      p.className = isError ? "error" : "";
+    }
+
+    function readForm() {
+      return {
+        email: document.getElementById("email").value.trim(),
+        password: document.getElementById("password").value
+      };
+    }
+
+    // 회원가입: 창고 관리실에 새 직원 출입증을 신청해요
+    async function signUp() {
+      const { email, password } = readForm();
+      const { data, error } = await db.auth.signUp({ email, password });
+      if (error) { loginMessage(korean(error.message), true); return; }
+      if (!data.session) loginMessage("가입 신청 완료! 이메일 인증이 필요한 설정이에요.", false);
+      // 바로 출입증(session)이 나오면 아래 onAuthStateChange가 화면을 바꿔 줘요
+    }
+
+    // 로그인: 이메일·비밀번호를 보여 주고 출입증을 받아요
+    async function signIn() {
+      const { email, password } = readForm();
+      const { error } = await db.auth.signInWithPassword({ email, password });
+      if (error) loginMessage(korean(error.message), true);
+    }
+
+    // 로그아웃: 출입증을 반납해요
+    async function signOut() {
+      await db.auth.signOut();
+    }
+
+    // 출입증 상태가 바뀔 때마다(로그인·로그아웃·새로고침) 알맞은 화면을 보여 줘요
+    db.auth.onAuthStateChange((event, session) => {
+      // 이 안에서 바로 창고에 전화하면 멈출 수 있어서, 아주 잠깐 뒤에 처리해요
+      setTimeout(() => showScreen(session), 0);
+    });
+
+    function showScreen(session) {
+      const loggedIn = !!session;
+      document.getElementById("loginScreen").classList.toggle("hidden", loggedIn);
+      document.getElementById("mainScreen").classList.toggle("hidden", !loggedIn);
+      if (loggedIn) {
+        document.getElementById("myEmail").textContent = session.user.email;
+        loginMessage("", false);
+        load();
+      } else {
+        books = [];
+      }
+    }
+
+    // ── 책 목록 부분 (2단계와 같아요) ──────────────
+
+    function showError(message) {
+      document.getElementById("count").innerHTML = `<span class="error">⚠️ ${message}</span>`;
+    }
+
+    async function load() {
+      const { data, error } = await db.from("books").select("*").order("id");
+      if (error) { showError(error.message); return; }
+      books = data;
+      render();
+    }
+
+    function render() {
+      const q = document.getElementById("search").value.trim();
+      const cat = document.getElementById("filter").value;
+      const shown = books.filter(b =>
+        (b.title.includes(q) || b.author.includes(q)) &&
+        (cat === "" || b.category === cat)
+      );
+      const availableCount = shown.filter(b => b.available).length;
+      document.getElementById("count").textContent =
+        `보이는 책 ${shown.length}권 · 대여 가능 ${availableCount}권`;
+      document.getElementById("list").innerHTML = shown.map(b => `
+        <tr>
+          <td>${b.title}</td>
+          <td>${b.author}</td>
+          <td>${b.category}</td>
+          <td class="${b.available ? "ok" : "no"}">${b.available ? "가능" : "대여 중"}</td>
+          <td><button class="del" onclick="deleteBook(${b.id})">삭제</button></td>
+        </tr>`).join("");
+    }
+
+    async function addBook() {
+      const title = document.getElementById("newTitle").value.trim();
+      const author = document.getElementById("newAuthor").value.trim();
+      const category = document.getElementById("newCategory").value;
+      if (!title || !author) { alert("제목과 저자를 입력해 주세요"); return; }
+      const { error } = await db.from("books").insert({ title, author, category });
+      if (error) { showError(error.message); return; }
+      document.getElementById("newTitle").value = "";
+      document.getElementById("newAuthor").value = "";
+      load();
+    }
+
+    async function deleteBook(id) {
+      const book = books.find(b => b.id === id);
+      if (!confirm(`'${book.title}'을(를) 삭제할까요?`)) return;
+      const { error } = await db.from("books").delete().eq("id", id);
+      if (error) { showError(error.message); return; }
+      load();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>사내 도서 대여</title>
+  <style>
+    body { font-family: -apple-system, "Apple SD Gothic Neo", sans-serif; max-width: 860px; margin: 0 auto; padding: 24px 16px; background: #f6f3ee; color: #222; }
+    h1 { margin: 0 0 4px; }
+    .sub { color: #777; margin: 0 0 20px; }
+    .box { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    input, select, button { font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid #ccc; }
+    button { cursor: pointer; background: #8a5a2b; color: #fff; border: none; }
+    button:disabled { background: #ccc; cursor: default; }
+    button.del { background: #c0392b; padding: 6px 10px; }
+    button.ghost { background: #eee; color: #333; }
+    button.tab { background: #eee; color: #333; }
+    button.tab.on { background: #8a5a2b; color: #fff; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 6px; border-bottom: 1px solid #eee; }
+    tr.click { cursor: pointer; }
+    tr.click:hover { background: #faf6f0; }
+    .ok { color: #2f6f4f; font-weight: bold; }
+    .no { color: #999; }
+    .mine { color: #8a5a2b; font-weight: bold; }
+    .late { background: #c0392b; color: #fff; border-radius: 6px; padding: 2px 8px; font-weight: bold; font-size: 13px; }
+    .count { margin: 0 0 8px; color: #555; }
+    .error { color: #c0392b; font-weight: bold; }
+    .msg { min-height: 1.2em; }
+    .login { max-width: 360px; margin: 40px auto; }
+    .login input { width: 100%; box-sizing: border-box; margin-bottom: 8px; }
+    .hidden { display: none; }
+    .me { margin-left: auto; }
+    .detail h2 { margin: 0 0 8px; }
+    .detail p { margin: 4px 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+  <script src="../config.js"></script>
+</head>
+<body>
+  <h1>📖 사내 도서 대여</h1>
+  <p class="sub">책을 눌러 대여하고, 내 대여 목록에서 반납해요 (최대 3권 · 14일)</p>
+
+  <!-- 화면 ①: 로그인 / 회원가입 -->
+  <div id="loginScreen" class="box login hidden">
+    <strong>로그인 / 회원가입</strong>
+    <div style="margin-top:12px">
+      <input id="email" type="email" placeholder="이메일">
+      <input id="password" type="password" placeholder="비밀번호 (6자 이상)">
+      <div class="row">
+        <button onclick="signIn()">로그인</button>
+        <button class="ghost" onclick="signUp()">회원가입</button>
+      </div>
+      <p id="loginMsg"></p>
+    </div>
+  </div>
+
+  <div id="mainScreen" class="hidden">
+    <!-- 맨 위: 내 이름, 탭, 로그아웃 -->
+    <div class="box row">
+      <span>👋 <strong id="myEmail"></strong> 님</span>
+      <button id="tabBooks" class="tab on" onclick="showTab('books')">📚 책 목록</button>
+      <button id="tabMine" class="tab" onclick="showTab('mine')">🧾 내 대여 목록 <span id="mineCount"></span></button>
+      <button class="ghost me" onclick="signOut()">로그아웃</button>
+    </div>
+    <p id="msg" class="msg"></p>
+
+    <!-- 화면 ③: 책 상세 (책을 누르면 열려요) -->
+    <div id="detail" class="box detail hidden"></div>
+
+    <!-- 화면 ②: 책 목록 -->
+    <div id="booksTab">
+      <div class="box">
+        <strong>책 추가</strong>
+        <div class="row" style="margin-top:8px">
+          <input id="newTitle" placeholder="제목">
+          <input id="newAuthor" placeholder="저자">
+          <select id="newCategory">
+            <option>업무</option><option>IT</option><option>경영</option><option>자기계발</option>
+          </select>
+          <button onclick="addBook()">추가</button>
+        </div>
+      </div>
+      <div class="box">
+        <div class="row" style="margin-bottom:12px">
+          <input id="search" placeholder="🔍 제목·저자 검색" oninput="renderBooks()">
+          <select id="filter" onchange="renderBooks()">
+            <option value="">전체 카테고리</option>
+            <option>업무</option><option>IT</option><option>경영</option><option>자기계발</option>
+          </select>
+        </div>
+        <p class="count" id="count">창고에서 책을 가져오는 중…</p>
+        <table>
+          <thead><tr><th>제목</th><th>저자</th><th>카테고리</th><th>상태</th><th></th></tr></thead>
+          <tbody id="list"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 화면 ④: 내 대여 목록 -->
+    <div id="mineTab" class="box hidden">
+      <p class="count" id="mineSummary"></p>
+      <table>
+        <thead><tr><th>제목</th><th>빌린 날</th><th>반납 예정일</th><th>남은 날</th><th></th></tr></thead>
+        <tbody id="mineList"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const db = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+    const MAX_BOOKS = 3;
+    let books = [];
+    let myRentals = [];   // 내가 지금 빌리고 있는 기록 (반납 안 한 것)
+    let openBookId = null;
+
+    // ── 공통 도우미 ──────────────────────────────
+
+    function korean(message) {
+      if (message.includes("Invalid login credentials")) return "이메일 또는 비밀번호가 틀렸어요.";
+      if (message.includes("already registered")) return "이미 가입된 이메일이에요. [로그인]을 눌러 주세요.";
+      if (message.includes("at least 6")) return "비밀번호는 6자 이상이어야 해요.";
+      if (message.includes("Email not confirmed")) return "이메일 인증이 아직 안 됐어요.";
+      return message;  // 대여·반납 창구의 안내문은 이미 한국어예요
+    }
+
+    function say(text, isError) {
+      const p = document.getElementById("msg");
+      p.textContent = text;
+      p.className = "msg" + (isError ? " error" : "");
+    }
+
+    // 오늘 날짜를 "2026-11-20" 모양으로 (내 컴퓨터 시간 기준)
+    function today() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+
+    // 반납 예정일까지 며칠 남았는지 (음수면 연체)
+    function daysLeft(dueDate) {
+      return Math.round((new Date(dueDate) - new Date(today())) / 86400000);
+    }
+
+    // ── 로그인 (4단계와 같아요) ───────────────────
+
+    function readForm() {
+      return { email: document.getElementById("email").value.trim(), password: document.getElementById("password").value };
+    }
+    function loginMessage(text) {
+      const p = document.getElementById("loginMsg");
+      p.textContent = text; p.className = "error";
+    }
+    async function signUp() {
+      const { error } = await db.auth.signUp(readForm());
+      if (error) loginMessage(korean(error.message));
+    }
+    async function signIn() {
+      const { error } = await db.auth.signInWithPassword(readForm());
+      if (error) loginMessage(korean(error.message));
+    }
+    async function signOut() { await db.auth.signOut(); }
+
+    db.auth.onAuthStateChange((event, session) => {
+      setTimeout(() => showScreen(session), 0);
+    });
+
+    function showScreen(session) {
+      const loggedIn = !!session;
+      document.getElementById("loginScreen").classList.toggle("hidden", loggedIn);
+      document.getElementById("mainScreen").classList.toggle("hidden", !loggedIn);
+      if (loggedIn) {
+        document.getElementById("myEmail").textContent = session.user.email;
+        document.getElementById("loginMsg").textContent = "";
+        loadAll();
+      }
+    }
+
+    function showTab(name) {
+      document.getElementById("booksTab").classList.toggle("hidden", name !== "books");
+      document.getElementById("mineTab").classList.toggle("hidden", name !== "mine");
+      document.getElementById("tabBooks").classList.toggle("on", name === "books");
+      document.getElementById("tabMine").classList.toggle("on", name === "mine");
+      closeDetail();
+    }
+
+    // ── 창고에서 가져오기 ─────────────────────────
+
+    // 책 목록과 내 대여 기록을 한꺼번에 새로 가져와요
+    async function loadAll() {
+      const [bookRes, rentRes] = await Promise.all([
+        db.from("books").select("*").order("id"),
+        db.from("rentals").select("*").is("returned_at", null).order("due_date")
+      ]);
+      if (bookRes.error) { say(bookRes.error.message, true); return; }
+      if (rentRes.error) { say(rentRes.error.message, true); return; }
+      books = bookRes.data;
+      myRentals = rentRes.data;
+      renderBooks();
+      renderMine();
+      if (openBookId) openDetail(openBookId);
+    }
+
+    function myRentalOf(bookId) {
+      return myRentals.find(r => r.book_id === bookId);
+    }
+
+    // ── 화면 ②: 책 목록 ──────────────────────────
+
+    function statusCell(b) {
+      const mine = myRentalOf(b.id);
+      if (mine) {
+        const late = daysLeft(mine.due_date) < 0 ? ' <span class="late">연체</span>' : "";
+        return `<span class="mine">내가 대여 중</span>${late}`;
+      }
+      return b.available ? '<span class="ok">가능</span>' : '<span class="no">대여 중</span>';
+    }
+
+    function renderBooks() {
+      const q = document.getElementById("search").value.trim();
+      const cat = document.getElementById("filter").value;
+      const shown = books.filter(b =>
+        (b.title.includes(q) || b.author.includes(q)) && (cat === "" || b.category === cat)
+      );
+      const availableCount = shown.filter(b => b.available).length;
+      document.getElementById("count").textContent =
+        `보이는 책 ${shown.length}권 · 대여 가능 ${availableCount}권 (책을 누르면 상세 화면이 열려요)`;
+      document.getElementById("list").innerHTML = shown.map(b => `
+        <tr class="click" onclick="openDetail(${b.id})">
+          <td>${b.title}</td><td>${b.author}</td><td>${b.category}</td>
+          <td>${statusCell(b)}</td>
+          <td><button class="del" onclick="event.stopPropagation(); deleteBook(${b.id})">삭제</button></td>
+        </tr>`).join("");
+    }
+
+    // ── 화면 ③: 책 상세 ──────────────────────────
+
+    function openDetail(bookId) {
+      const b = books.find(x => x.id === bookId);
+      if (!b) { closeDetail(); return; }
+      openBookId = bookId;
+      const mine = myRentalOf(bookId);
+      let action;
+      if (mine) {
+        action = `<p>반납 예정일: <strong>${mine.due_date}</strong></p>
+                  <button onclick="returnBook(${mine.id})">반납하기</button>`;
+      } else if (b.available) {
+        const full = myRentals.length >= MAX_BOOKS;
+        action = `<button onclick="rentBook(${b.id})">대여하기 (14일)</button>
+                  ${full ? '<p class="error">이미 3권을 빌리고 있어요. 하나를 반납하면 빌릴 수 있어요.</p>' : ""}`;
+      } else {
+        action = `<p class="no">다른 직원이 대여 중이에요.</p>`;
+      }
+      const box = document.getElementById("detail");
+      box.innerHTML = `
+        <div class="row"><h2>${b.title}</h2><button class="ghost me" onclick="closeDetail()">닫기 ✕</button></div>
+        <p>저자: ${b.author} · 카테고리: ${b.category}</p>
+        <p>상태: ${statusCell(b)}</p>
+        <div style="margin-top:12px">${action}</div>`;
+      box.classList.remove("hidden");
+    }
+
+    function closeDetail() {
+      openBookId = null;
+      document.getElementById("detail").classList.add("hidden");
+    }
+
+    // ── 대여·반납: 창고의 '창구 함수'를 불러요 ─────
+
+    async function rentBook(bookId) {
+      const { error } = await db.rpc("rent_book", { p_book_id: bookId });
+      if (error) { say("⚠️ " + korean(error.message), true); return; }
+      const b = books.find(x => x.id === bookId);
+      say(`✅ '${b.title}'을(를) 빌렸어요. 14일 안에 반납해 주세요.`, false);
+      await loadAll();
+    }
+
+    async function returnBook(rentalId) {
+      const { error } = await db.rpc("return_book", { p_rental_id: rentalId });
+      if (error) { say("⚠️ " + korean(error.message), true); return; }
+      say("✅ 반납했어요. 고마워요!", false);
+      await loadAll();
+    }
+
+    // ── 화면 ④: 내 대여 목록 ─────────────────────
+
+    function renderMine() {
+      const lateCount = myRentals.filter(r => daysLeft(r.due_date) < 0).length;
+      document.getElementById("mineCount").textContent = `(${myRentals.length}/${MAX_BOOKS})`;
+      document.getElementById("mineSummary").textContent =
+        `대여 중 ${myRentals.length}/${MAX_BOOKS}권` + (lateCount ? ` · 연체 ${lateCount}권` : "");
+      if (myRentals.length === 0) {
+        document.getElementById("mineList").innerHTML = `<tr><td colspan="5" class="no">빌린 책이 없어요. 책 목록에서 빌려 보세요!</td></tr>`;
+        return;
+      }
+      document.getElementById("mineList").innerHTML = myRentals.map(r => {
+        const b = books.find(x => x.id === r.book_id);
+        const left = daysLeft(r.due_date);
+        const leftText = left < 0 ? `<span class="late">연체 ${-left}일</span>` : (left === 0 ? "오늘까지" : `${left}일 남음`);
+        return `
+          <tr>
+            <td>${b ? b.title : "(삭제된 책)"}</td>
+            <td>${r.rented_at.slice(0, 10)}</td>
+            <td>${r.due_date}</td>
+            <td>${leftText}</td>
+            <td><button onclick="returnBook(${r.id})">반납</button></td>
+          </tr>`;
+      }).join("");
+    }
+
+    // ── 책 추가·삭제 (4단계와 같아요) ──────────────
+
+    async function addBook() {
+      const title = document.getElementById("newTitle").value.trim();
+      const author = document.getElementById("newAuthor").value.trim();
+      const category = document.getElementById("newCategory").value;
+      if (!title || !author) { alert("제목과 저자를 입력해 주세요"); return; }
+      const { error } = await db.from("books").insert({ title, author, category });
+      if (error) { say(error.message, true); return; }
+      document.getElementById("newTitle").value = "";
+      document.getElementById("newAuthor").value = "";
+      loadAll();
+    }
+
+    async function deleteBook(id) {
+      const book = books.find(b => b.id === id);
+      if (!confirm(`'${book.title}'을(를) 삭제할까요?`)) return;
+      const { error } = await db.from("books").delete().eq("id", id);
+      if (error) { say(error.message, true); return; }
+      if (openBookId === id) closeDetail();
+      loadAll();
+    }
+  </script>
+</body>
+</html>

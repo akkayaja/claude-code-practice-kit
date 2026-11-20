@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>사내 도서 대여 (Supabase판)</title>
+  <style>
+    body { font-family: -apple-system, "Apple SD Gothic Neo", sans-serif; max-width: 860px; margin: 0 auto; padding: 24px 16px; background: #f0f4f7; color: #222; }
+    h1 { margin: 0 0 4px; }
+    .sub { color: #777; margin: 0 0 20px; }
+    .box { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    input, select, button { font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid #ccc; }
+    button { cursor: pointer; background: #1f6f9f; color: #fff; border: none; }
+    button.del { background: #c0392b; padding: 6px 10px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 6px; border-bottom: 1px solid #eee; }
+    .ok { color: #2f6f4f; font-weight: bold; }
+    .no { color: #999; }
+    .count { margin: 0 0 8px; color: #555; }
+    .error { color: #c0392b; font-weight: bold; }
+  </style>
+  <!-- Supabase와 대화하는 도구 (인터넷에서 불러와요) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+  <!-- 창고 주소와 출입 키 (GitHub에 안 올라가는 파일) -->
+  <script src="../config.js"></script>
+</head>
+<body>
+  <h1>☁️ 사내 도서 대여</h1>
+  <p class="sub">Supabase판: 인터넷 창고에 저장돼서 어느 브라우저에서 열어도 같아요</p>
+
+  <!-- 책 추가하기 -->
+  <div class="box">
+    <strong>책 추가</strong>
+    <div class="row" style="margin-top:8px">
+      <input id="newTitle" placeholder="제목">
+      <input id="newAuthor" placeholder="저자">
+      <select id="newCategory">
+        <option>업무</option><option>IT</option><option>경영</option><option>자기계발</option>
+      </select>
+      <button onclick="addBook()">추가</button>
+    </div>
+  </div>
+
+  <!-- 검색과 필터, 목록 -->
+  <div class="box">
+    <div class="row" style="margin-bottom:12px">
+      <input id="search" placeholder="🔍 제목·저자 검색" oninput="render()">
+      <select id="filter" onchange="render()">
+        <option value="">전체 카테고리</option>
+        <option>업무</option><option>IT</option><option>경영</option><option>자기계발</option>
+      </select>
+    </div>
+    <p class="count" id="count">창고에서 책을 가져오는 중…</p>
+    <table>
+      <thead><tr><th>제목</th><th>저자</th><th>카테고리</th><th>대여 가능</th><th></th></tr></thead>
+      <tbody id="list"></tbody>
+    </table>
+  </div>
+
+  <script>
+    // 창고(Supabase)와 연결된 '전화기'를 하나 만들어요
+    const db = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+    let books = [];
+
+    // 문제가 생기면 화면에 빨간 글씨로 보여 줘요
+    function showError(message) {
+      document.getElementById("count").innerHTML = `<span class="error">⚠️ ${message}</span>`;
+    }
+
+    // 창고에서 책 전체를 번호 순서대로 가져와요
+    async function load() {
+      const { data, error } = await db.from("books").select("*").order("id");
+      if (error) { showError(error.message); return; }
+      books = data;
+      render();
+    }
+
+    // 검색어·필터에 맞는 책만 골라서 표로 그려요 (1단계와 같아요)
+    function render() {
+      const q = document.getElementById("search").value.trim();
+      const cat = document.getElementById("filter").value;
+      const shown = books.filter(b =>
+        (b.title.includes(q) || b.author.includes(q)) &&
+        (cat === "" || b.category === cat)
+      );
+      const availableCount = shown.filter(b => b.available).length;
+      document.getElementById("count").textContent =
+        `보이는 책 ${shown.length}권 · 대여 가능 ${availableCount}권`;
+      document.getElementById("list").innerHTML = shown.map(b => `
+        <tr>
+          <td>${b.title}</td>
+          <td>${b.author}</td>
+          <td>${b.category}</td>
+          <td class="${b.available ? "ok" : "no"}">${b.available ? "가능" : "대여 중"}</td>
+          <td><button class="del" onclick="deleteBook(${b.id})">삭제</button></td>
+        </tr>`).join("");
+    }
+
+    // 새 책을 창고에 넣어요 (번호는 창고가 알아서 붙여요)
+    async function addBook() {
+      const title = document.getElementById("newTitle").value.trim();
+      const author = document.getElementById("newAuthor").value.trim();
+      const category = document.getElementById("newCategory").value;
+      if (!title || !author) { alert("제목과 저자를 입력해 주세요"); return; }
+      const { error } = await db.from("books").insert({ title, author, category });
+      if (error) { showError(error.message); return; }
+      document.getElementById("newTitle").value = "";
+      document.getElementById("newAuthor").value = "";
+      load();
+    }
+
+    // 창고에서 책을 지워요 (한 번 물어보고)
+    async function deleteBook(id) {
+      const book = books.find(b => b.id === id);
+      if (!confirm(`'${book.title}'을(를) 삭제할까요?`)) return;
+      const { error } = await db.from("books").delete().eq("id", id);
+      if (error) { showError(error.message); return; }
+      load();
+    }
+
+    load();
+  </script>
+</body>
+</html>

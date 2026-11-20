@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>사내 도서 대여 앱 (연습)</title>
+  <style>
+    body { font-family: -apple-system, "Apple SD Gothic Neo", sans-serif; max-width: 640px; margin: 0 auto; padding: 40px 16px; background: #f6f3ee; color: #222; }
+    .box { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    a.btn { display: inline-block; background: #8a5a2b; color: #fff; text-decoration: none; padding: 12px 18px; border-radius: 10px; margin: 6px 6px 0 0; }
+    a.btn.gray { background: #555; }
+    ul { line-height: 1.8; padding-left: 20px; }
+    .note { color: #777; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>📖 사내 도서 대여 앱</h1>
+  <p class="note">Claude Code 실습키트 12번 · 로그인 + 데이터베이스 연습 프로젝트</p>
+
+  <div class="box">
+    <strong>할 수 있는 것</strong>
+    <ul>
+      <li>회원가입 · 로그인 (Supabase Auth)</li>
+      <li>책 검색 · 카테고리 필터</li>
+      <li>대여 · 반납 (1인 최대 3권, 14일, 연체 표시)</li>
+      <li>관리자: 책 등록 · 수정 · 삭제, 대여 기록 대시보드</li>
+    </ul>
+    <a class="btn" href="5_관리자/">📚 도서 대여 앱 열기</a>
+    <a class="btn gray" href="6_대시보드/">📊 대시보드 (관리자)</a>
+  </div>
+
+  <p class="note">⚠️ 연습용 사이트예요. 가입할 때 진짜 이메일이나 다른 곳에서 쓰는 비밀번호는 쓰지 마세요.<br>
+  만든 도구: HTML · JavaScript · Supabase(PostgreSQL, 행 단위 보안 RLS) · Vercel</p>
+</body>
+</html>
