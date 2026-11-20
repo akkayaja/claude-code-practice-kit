@@ -18,7 +18,31 @@
       --accent: #c26b3c;      /* 포인트: 구운 오렌지 */
       --accent-soft: #f3e3d6; /* 연한 포인트 */
       --line: #eadfd5;        /* 테두리 */
+      --glow: #f6dcc8;        /* 첫 화면 위쪽 은은한 빛 */
+      --header-bg: rgba(251, 247, 242, 0.92); /* 메뉴바 바탕 */
     }
+
+    /* ===== 1-1. 다크모드 색상표 (밤 버전 인테리어) =====
+       html 태그에 data-theme="dark"가 붙으면 위 색들을 이 색으로 바꿔 끼워요 */
+    :root[data-theme="dark"] {
+      --bg: #1c1714;          /* 바탕: 깊은 에스프레소색 */
+      --card: #2a221e;        /* 카드 바탕 */
+      --text: #f2e9e1;        /* 글자: 우유 거품색 */
+      --muted: #b8a89e;
+      --accent: #e08a55;      /* 어두운 곳에서 잘 보이게 조금 밝은 주황 */
+      --accent-soft: #33271f;
+      --line: #3d322b;
+      --glow: #4a2f1f;
+      --header-bg: rgba(28, 23, 20, 0.92);
+    }
+
+    /* 다크모드 전환 버튼 (메뉴바 오른쪽 끝의 🌙/☀️) */
+    .theme-btn {
+      background: none; border: 1px solid var(--line);
+      border-radius: 999px; width: 36px; height: 36px;
+      font-size: 1.05rem; cursor: pointer; margin-left: 4px;
+    }
+    body { transition: background 0.3s, color 0.3s; }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -47,7 +71,7 @@
     /* ===== 2. 위쪽 메뉴바 ===== */
     header {
       position: sticky; top: 0; z-index: 10;
-      background: rgba(251, 247, 242, 0.92);
+      background: var(--header-bg);
       backdrop-filter: blur(6px);
       border-bottom: 1px solid var(--line);
     }
@@ -57,7 +81,7 @@
     }
     .logo { font-weight: 800; color: var(--text); text-decoration: none; font-size: 1.1rem; }
     .logo span { color: var(--accent); }
-    nav ul { display: flex; gap: 20px; list-style: none; }
+    nav ul { display: flex; align-items: center; gap: 20px; list-style: none; }
     nav ul a { color: var(--text); text-decoration: none; font-size: 0.95rem; }
     nav ul a:hover { color: var(--accent); }
 
@@ -66,7 +90,7 @@
       text-align: center;
       padding: 110px 0 100px;
       background:
-        radial-gradient(circle at 50% 0%, #f6dcc8 0%, transparent 60%),
+        radial-gradient(circle at 50% 0%, var(--glow) 0%, transparent 60%),
         var(--bg);
     }
     .hero .icon { font-size: 3rem; }
@@ -136,6 +160,31 @@
     }
     .contact-list a:hover { border-color: var(--accent); }
 
+    /* ===== 7-1. 문의 폼 ===== */
+    .form-card {
+      max-width: 560px; margin: 40px auto 0;
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 16px; padding: 28px 24px;
+    }
+    .form-card h3 { margin-bottom: 4px; }
+    .form-card .note { color: var(--muted); font-size: 0.85rem; margin-bottom: 18px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-weight: 600; font-size: 0.92rem; margin-bottom: 6px; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 12px 14px;
+      font: inherit; color: var(--text);
+      background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: 2px solid var(--accent); border-color: transparent;
+    }
+    .field textarea { min-height: 110px; resize: vertical; }
+    .form-card .btn { border: none; cursor: pointer; font-size: 1rem; width: 100%; }
+    .done {
+      display: none; margin-top: 16px; padding: 14px 16px;
+      background: var(--accent-soft); border-radius: 10px; font-weight: 600;
+    }
+
     footer {
       text-align: center; color: var(--muted); font-size: 0.85rem;
       padding: 28px 0 40px; border-top: 1px solid var(--line);
@@ -163,6 +212,7 @@
         <li><a href="#menu">메뉴</a></li>
         <li><a href="#info">영업시간</a></li>
         <li><a href="#contact">연락처</a></li>
+        <li><button class="theme-btn" id="themeBtn" aria-label="다크모드 켜기/끄기">🌙</button></li>
       </ul>
     </nav>
   </header>
@@ -252,12 +302,83 @@
         <a href="tel:02-000-0000">📞 02-000-0000</a>
         <a href="#contact">📷 @onggi_cafe_practice</a>
       </div>
+
+      <!-- 문의 폼 (손님이 적는 '문의 쪽지') -->
+      <form class="form-card" id="inquiryForm">
+        <h3>✉️ 문의 남기기</h3>
+        <p class="note">실습용 폼이에요. 버튼을 눌러도 실제로 어디에 보내지지는 않아요.</p>
+
+        <div class="field">
+          <label for="name">이름</label>
+          <input id="name" name="name" type="text" placeholder="예: 김온기" required>
+        </div>
+        <div class="field">
+          <label for="reply">답장 받을 연락처</label>
+          <input id="reply" name="reply" type="text" placeholder="전화번호 또는 이메일" required>
+        </div>
+        <div class="field">
+          <label for="kind">문의 종류</label>
+          <select id="kind" name="kind">
+            <option>예약</option>
+            <option>단체 주문</option>
+            <option>기타</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="message">내용</label>
+          <textarea id="message" name="message" placeholder="궁금한 점을 적어 주세요" required></textarea>
+        </div>
+
+        <button class="btn" type="submit">문의 보내기</button>
+        <p class="done" id="doneMsg"></p>
+      </form>
     </div>
   </section>
 
   <footer>
     © 오늘의 온기 · 이 페이지는 웹페이지 배포 실습용 가상 가게입니다.
   </footer>
+
+  <!-- 다크모드 스위치 (전등 스위치처럼 누를 때마다 낮↔밤) -->
+  <script>
+    const root = document.documentElement;   // html 태그
+    const btn = document.getElementById('themeBtn');
+
+    // 처음 열 때: 전에 고른 모드가 있으면 그걸, 없으면 휴대폰·컴퓨터 설정(다크/라이트)을 따라가요
+    let saved = null;
+    try { saved = localStorage.getItem('theme'); } catch (e) {}
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setTheme(saved || (systemDark ? 'dark' : 'light'));
+
+    // 버튼을 누르면 반대 모드로 바꾸고 기억해 둬요
+    btn.addEventListener('click', () => {
+      const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      setTheme(next);
+      try { localStorage.setItem('theme', next); } catch (e) {}
+    });
+
+    function setTheme(mode) {
+      root.dataset.theme = mode;                  // html에 data-theme="dark" 또는 "light"
+      btn.textContent = mode === 'dark' ? '☀️' : '🌙'; // 밤이면 해, 낮이면 달 아이콘
+    }
+
+    // ===== 문의 폼: '보내기'를 누르면 =====
+    const form = document.getElementById('inquiryForm');
+    const done = document.getElementById('doneMsg');
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();  // 페이지가 새로고침되며 사라지지 않게 막아요
+
+      const name = document.getElementById('name').value.trim();
+      const kind = document.getElementById('kind').value;
+
+      // 접수 안내 문구 보여 주기 (textContent라서 손님이 이상한 글자를 넣어도 안전해요)
+      done.textContent = `${name}님, '${kind}' 문의가 접수됐어요! (실습용이라 실제로 전송되지는 않아요)`;
+      done.style.display = 'block';
+
+      form.reset();            // 칸 비우기
+    });
+  </script>
 
 </body>
 </html>
