@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- 글자가 깨지지 않게 한글 인코딩 지정 -->
+  <meta charset="UTF-8">
+  <!-- 휴대폰에서 화면 폭에 맞춰 보이게 하는 줄 (이게 없으면 휴대폰에서 아주 작게 보여요) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>오늘의 온기 | 동네에서 가장 따뜻한 커피 한 잔</title>
+  <meta name="description" content="카페 오늘의 온기 - 메뉴, 영업시간, 위치 안내 (실습용 가상 가게)">
+
+  <style>
+    /* ===== 1. 색과 글꼴 (가게의 '인테리어 색상표') ===== */
+    :root {
+      --bg: #fbf7f2;          /* 바탕: 따뜻한 미색 */
+      --card: #ffffff;        /* 카드 바탕 */
+      --text: #3b2f2a;        /* 글자: 짙은 커피색 */
+      --muted: #7a6a62;       /* 흐린 글자 */
+      --accent: #c26b3c;      /* 포인트: 구운 오렌지 */
+      --accent-soft: #f3e3d6; /* 연한 포인트 */
+      --line: #eadfd5;        /* 테두리 */
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; } /* 메뉴바 누르면 부드럽게 이동 */
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                   "Malgun Gothic", "Noto Sans KR", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      word-break: keep-all; /* 한글 단어가 중간에 끊기지 않게 */
+    }
+
+    .wrap { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+
+    section { padding: 72px 0; scroll-margin-top: 60px; }
+
+    h2 {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .sub { color: var(--muted); text-align: center; margin-bottom: 36px; }
+
+    /* ===== 2. 위쪽 메뉴바 ===== */
+    header {
+      position: sticky; top: 0; z-index: 10;
+      background: rgba(251, 247, 242, 0.92);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--line);
+    }
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .logo { font-weight: 800; color: var(--text); text-decoration: none; font-size: 1.1rem; }
+    .logo span { color: var(--accent); }
+    nav ul { display: flex; gap: 20px; list-style: none; }
+    nav ul a { color: var(--text); text-decoration: none; font-size: 0.95rem; }
+    nav ul a:hover { color: var(--accent); }
+
+    /* ===== 3. 첫 화면 ===== */
+    .hero {
+      text-align: center;
+      padding: 110px 0 100px;
+      background:
+        radial-gradient(circle at 50% 0%, #f6dcc8 0%, transparent 60%),
+        var(--bg);
+    }
+    .hero .icon { font-size: 3rem; }
+    .hero h1 { font-size: 2.8rem; margin: 12px 0; letter-spacing: -1px; }
+    .hero p { font-size: 1.15rem; color: var(--muted); margin-bottom: 32px; }
+    .btn {
+      display: inline-block;
+      background: var(--accent); color: #fff;
+      padding: 14px 32px; border-radius: 999px;
+      text-decoration: none; font-weight: 700;
+      transition: transform 0.15s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+
+    /* ===== 4. 메뉴 카드 ===== */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* 화면 폭에 따라 칸 수 자동 */
+      gap: 18px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 24px 20px;
+      position: relative;
+    }
+    .card .emoji { font-size: 2rem; }
+    .card h3 { margin: 8px 0 4px; font-size: 1.15rem; }
+    .card .price { color: var(--accent); font-weight: 700; }
+    .card p { color: var(--muted); font-size: 0.93rem; margin-top: 8px; }
+    .badge {
+      position: absolute; top: 16px; right: 16px;
+      background: var(--accent); color: #fff;
+      font-size: 0.75rem; font-weight: 700;
+      padding: 3px 10px; border-radius: 999px;
+    }
+
+    /* ===== 5. 사장님 한마디 ===== */
+    .quote { background: var(--accent-soft); text-align: center; }
+    .quote blockquote { font-size: 1.4rem; font-weight: 600; max-width: 640px; margin: 0 auto; }
+    .quote cite { display: block; margin-top: 14px; color: var(--muted); font-style: normal; }
+
+    /* ===== 6. 영업시간 · 위치 ===== */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .info-grid .card h3 { margin-bottom: 12px; }
+    .hours { list-style: none; }
+    .hours li {
+      display: flex; justify-content: space-between;
+      padding: 8px 0; border-bottom: 1px dashed var(--line);
+    }
+    .hours li:last-child { border-bottom: none; }
+    .closed { color: var(--accent); font-weight: 700; }
+
+    /* ===== 7. 연락처 ===== */
+    .contact-list {
+      display: flex; justify-content: center; gap: 18px; flex-wrap: wrap;
+    }
+    .contact-list a {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 14px; padding: 16px 24px;
+      color: var(--text); text-decoration: none; font-weight: 600;
+    }
+    .contact-list a:hover { border-color: var(--accent); }
+
+    footer {
+      text-align: center; color: var(--muted); font-size: 0.85rem;
+      padding: 28px 0 40px; border-top: 1px solid var(--line);
+    }
+
+    /* ===== 8. 휴대폰 화면 (폭 640px 이하일 때만 적용) ===== */
+    @media (max-width: 640px) {
+      nav ul { gap: 14px; }
+      nav ul a { font-size: 0.85rem; }
+      .hero { padding: 80px 0 70px; }
+      .hero h1 { font-size: 2.1rem; }
+      section { padding: 56px 0; }
+      .info-grid { grid-template-columns: 1fr; } /* 2칸 → 1칸으로 */
+      .quote blockquote { font-size: 1.15rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 위쪽 메뉴바 -->
+  <header>
+    <nav class="wrap">
+      <a class="logo" href="#top">오늘의 <span>온기</span></a>
+      <ul>
+        <li><a href="#menu">메뉴</a></li>
+        <li><a href="#info">영업시간</a></li>
+        <li><a href="#contact">연락처</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- 1. 첫 화면 -->
+  <section class="hero" id="top">
+    <div class="wrap">
+      <div class="icon">☕</div>
+      <h1>오늘의 온기</h1>
+      <p>동네에서 가장 따뜻한 커피 한 잔</p>
+      <a class="btn" href="#menu">메뉴 보기</a>
+    </div>
+  </section>
+
+  <!-- 2. 메뉴 -->
+  <section id="menu">
+    <div class="wrap">
+      <h2>대표 메뉴</h2>
+      <p class="sub">매일 정성껏 준비해요</p>
+      <div class="menu-grid">
+        <div class="card">
+          <span class="badge">시그니처</span>
+          <div class="emoji">🥛</div>
+          <h3>온기 라떼</h3>
+          <div class="price">5,800원</div>
+          <p>흑당과 우유의 조화</p>
+        </div>
+        <div class="card">
+          <div class="emoji">☕</div>
+          <h3>핸드드립</h3>
+          <div class="price">6,000원</div>
+          <p>오늘의 원두로 내린 드립 커피</p>
+        </div>
+        <div class="card">
+          <div class="emoji">🫘</div>
+          <h3>아메리카노</h3>
+          <div class="price">4,500원</div>
+          <p>고소한 블렌드</p>
+        </div>
+        <div class="card">
+          <div class="emoji">🍰</div>
+          <h3>바스크 치즈케이크</h3>
+          <div class="price">6,500원</div>
+          <p>매일 아침 직접 굽는 케이크</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. 사장님 한마디 -->
+  <section class="quote">
+    <div class="wrap">
+      <blockquote>“바쁜 하루 중 10분,<br>쉬어 가는 곳이 되고 싶어요.”</blockquote>
+      <cite>— 오늘의 온기 사장님</cite>
+    </div>
+  </section>
+
+  <!-- 4. 영업시간 · 위치 -->
+  <section id="info">
+    <div class="wrap">
+      <h2>영업시간 · 위치</h2>
+      <p class="sub">편하게 들러 주세요</p>
+      <div class="info-grid">
+        <div class="card">
+          <h3>🕗 영업시간</h3>
+          <ul class="hours">
+            <li><span>평일</span><span>08:00 ~ 21:00</span></li>
+            <li><span>주말</span><span>10:00 ~ 20:00</span></li>
+            <li><span>휴무</span><span class="closed">매주 월요일</span></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>📍 위치</h3>
+          <p>서울시 연습구 연습로 123 1층</p>
+          <p>연습역 2번 출구에서 도보 3분</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 연락처 -->
+  <section id="contact">
+    <div class="wrap">
+      <h2>연락처</h2>
+      <p class="sub">예약·단체 주문은 편하게 연락 주세요</p>
+      <div class="contact-list">
+        <a href="tel:02-000-0000">📞 02-000-0000</a>
+        <a href="#contact">📷 @onggi_cafe_practice</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    © 오늘의 온기 · 이 페이지는 웹페이지 배포 실습용 가상 가게입니다.
+  </footer>
+
+</body>
+</html>
