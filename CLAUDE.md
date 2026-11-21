@@ -20,7 +20,7 @@
 
 ## 진행 상황
 - 이 폴더는 GitHub 공개 저장소 https://github.com/akkayaja/claude-code-practice-kit 와 연결돼 있어요 (`main` → `origin`).
-- 완료한 실습: 01 엑셀자동화, 02 보고서자동생성, 03 메일분류, 04 구글시트폼자동화, 05 PDF정보추출, 06 데이터분석리포트, 07 SQL연습, 08 대시보드, 09 웹크롤링, 10 Git기초, 11 웹페이지배포, 12 로그인DB웹앱. 학습일지는 `학습일지/`에 있어요.
+- 완료한 실습: 01 엑셀자동화, 02 보고서자동생성, 03 메일분류, 04 구글시트폼자동화, 05 PDF정보추출, 06 데이터분석리포트, 07 SQL연습, 08 대시보드, 09 웹크롤링, 10 Git기초, 11 웹페이지배포, 12 로그인DB웹앱, 13 API연결. 학습일지는 `학습일지/`에 있어요.
 - `06_데이터분석리포트/`에는 전용 가상환경 `.venv`(파이썬 3.12, `pandas`·`matplotlib`)가 있어요. 도전 미션은 `도전_공공데이터/` 폴더에 따로 있고, 스크립트는 06 폴더에서 `.venv/bin/python 도전_공공데이터/파일이름.py`로 실행해요. 공공데이터 CSV는 `encoding="cp949"`로 읽어요.
 - 06번에서 사용자가 질문을 직접 고르기 어려워하면 Claude가 골라 주길 원했어요. 사용자는 "내 상황과 목표를 말하면 그에 맞게 자료를 가공해 주는" 방식에 관심이 있어요.
 - `07_SQL연습/`에는 전용 가상환경 `.venv`(파이썬 3.12, `pandas`·`matplotlib`)가 있어요. SQL 파일은 07 폴더에서 `sqlite3 shop.db < 파일이름.sql`로 실행해요. DB Browser for SQLite가 `/Applications`에 설치돼 있어요.
@@ -29,6 +29,7 @@
 - `09_웹크롤링/`에는 전용 가상환경 `.venv`(파이썬 3.12, `requests`·`beautifulsoup4`)가 있어요. 연습 서버는 09 폴더에서 `python3 -m http.server 8080 -d practice_site > /dev/null 2>&1 &`로 뒤에서 켜고 `kill %1`로 꺼요 (사용자 터미널 탭이 하나라서). 실행 결과(`bash-input`)가 늦게 도착하기도 하니, 이상하면 `read_terminal`로 실제 상태를 먼저 확인해요.
 - `11_웹페이지배포/index.html`은 Vercel 프로젝트 `onggi-cafe-practice`(팀 "ace")로 배포돼 있어요 → https://onggi-cafe-practice.vercel.app . GitHub와 자동 연결은 안 돼 있어서, 고치면 Claude가 Vercel 도구로 다시 배포해요. 사용자의 크롬은 Vercel에 로그인돼 있지 않아요. 사용자는 1인 사업에 관심이 있어요.
 - `12_로그인DB웹앱/`은 Supabase 프로젝트 `book-rental-practice`(서울, 무료, id `nhuueojbcvbspyilsloq`)를 써요. 테이블 `books`·`rentals`·`admins`, 함수 `rent_book`·`return_book`·`is_admin`, 'Confirm email'은 꺼 둠. Claude는 Supabase 도구로 SQL을 직접 적용하고, 실행한 SQL은 단계 폴더에 `.sql` 파일로 남겨요. 창고 주소·키는 `12_로그인DB웹앱/config.js`(`.gitignore`로 제외, 양식은 `config.example.js`). 최종 앱(`5_관리자/`·`6_대시보드/`·`index.html`·`config.js`)은 Vercel 프로젝트 `book-rental-practice`(팀 "ace")로 배포 → https://book-rental-practice.vercel.app (GitHub 자동 연결 없음). 연습 계정은 가짜 이메일 2개(둘 다 관리자)이고, 첫 계정 비밀번호는 사용자가 잊었어요. 무료 Supabase는 일주일 안 쓰면 일시정지돼요. 연습 서버는 12 폴더에서 `python3 -m http.server 8000 > /dev/null 2>&1 &` → `kill %1`.
+- `13_API연결/`은 가상환경 없이 맥 기본 `python3`(표준 라이브러리 `urllib`)로 실행해요. 연습 서버는 13 폴더에서 `python3 mock_api/server.py > /dev/null 2>&1 &` → `kill %1`. 한글이 든 `curl` 요청은 `-G --data-urlencode`로 보내요 (그냥 보내면 서버가 글자를 깨뜨려 404). 공공데이터포털에서 '기상청_단기예보 조회서비스'를 **개인 서비스키**로 받았고, 키는 `13_API연결/.env`의 `DATA_GO_KR_KEY`에 있어요 (`.gitignore`로 제외). 포털은 이제 '일반 인증키' 하나만 보여 줘요. 활용신청서는 새 탭으로 열리고, 약관 동의 체크는 사용자가 직접 해요. `4_날씨기록.py`로 `날씨기록.csv`에 기록을 쌓아요 → 14번에서 매일 자동 실행으로 연결할 예정.
 - `05_PDF정보추출/`에는 전용 가상환경 `.venv`(파이썬 3.12, `pdfplumber`·`openpyxl`)가 있어요. 실습마다 필요한 도구가 기본 파이썬에 없으면 그 폴더에 `uv venv --python 3.12` → `uv pip install 도구이름`으로 전용 가상환경을 만들게 안내해요 (사용자가 직접 실행).
 - 05번에서 사용자가 만족한 진행 방식: 미션 하나당 스크립트 하나(`1_텍스트보기.py`, `2_값추출.py` …처럼 번호를 붙임) → 하는 일을 쉬운 말로 설명 → 실행 명령 → Claude가 미리 돌려 본 **예상 결과**(핵심 숫자) 제시 → 사용자 실행 후 정답과 맞춰 보기. 미리 실행하면서 생긴 결과 파일은 지우거나 원래대로 되돌려서 사용자가 직접 만들게 해요. 기본 미션을 마친 뒤 도전 미션까지 이어서 해요. 엑셀을 다시 저장한 뒤에는 열려 있는 창을 닫고 다시 열게 안내해요.
 - `03_메일분류/`에는 전용 가상환경 `.venv`(파이썬 3.12, `anthropic` 설치)와 Claude API 키가 든 `.env`가 있어요 (둘 다 `.gitignore`로 제외). API 쓰는 스크립트는 `.venv/bin/python 파일이름.py`로 실행해요.
