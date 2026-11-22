@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 업무자동화 포트폴리오</title>
+<meta name="description" content="비전공 직장인이 Claude Code로 업무 자동화 20개를 만든 기록">
+<style>
+  :root {
+    --bg: #f7f8f6; --card: #ffffff; --text: #1d2420; --sub: #5c6660;
+    --line: #e2e6e3; --green: #2e9e6a; --green-soft: #e3f4ec; --gray: #b0b0b0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141816; --card: #1d2320; --text: #e9eeeb; --sub: #a3ada7;
+      --line: #2e3632; --green: #4cc18a; --green-soft: #1f3a2d; --gray: #5d6661;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    line-height: 1.65; word-break: keep-all;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 16px; }
+  a { color: var(--green); }
+
+  /* 맨 위 소개 */
+  header { padding: 64px 0 40px; }
+  .tag { display: inline-block; font-size: 14px; color: var(--green); background: var(--green-soft);
+         padding: 4px 12px; border-radius: 999px; margin-bottom: 16px; }
+  h1 { font-size: clamp(26px, 5vw, 38px); line-height: 1.3; margin: 0 0 12px; }
+  .lead { color: var(--sub); font-size: 17px; margin: 0 0 28px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  .stat b { display: block; font-size: 28px; color: var(--green); }
+  .stat span { font-size: 14px; color: var(--sub); }
+
+  section { padding: 32px 0; }
+  h2 { font-size: 24px; margin: 0 0 6px; }
+  .h2-sub { color: var(--sub); margin: 0 0 24px; }
+
+  /* 대표 사례 */
+  .case { background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+          padding: 24px; margin-bottom: 20px; }
+  .case .team { font-size: 13px; color: var(--green); font-weight: 600; }
+  .case h3 { font-size: 20px; margin: 4px 0 8px; }
+  .case .summary { margin: 0 0 18px; }
+  .pss { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+  .pss div { background: var(--bg); border-radius: 12px; padding: 12px 14px; font-size: 15px; }
+  .pss b { display: block; font-size: 13px; color: var(--sub); margin-bottom: 4px; }
+
+  /* 막대 그래프 (그림 파일 없이 화면이 직접 그림) */
+  .chart { border-top: 1px dashed var(--line); padding-top: 16px; }
+  .chart-title { font-size: 14px; color: var(--sub); margin-bottom: 10px; }
+  .row { display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 10px; margin: 6px 0; font-size: 14px; }
+  .track { position: relative; height: 26px; background: var(--bg); border-radius: 6px; }
+  .bar { position: absolute; top: 0; bottom: 0; border-radius: 6px; background: var(--green);
+         display: flex; align-items: center; padding: 0 8px; color: #fff; font-size: 13px; white-space: nowrap; min-width: 6px; }
+  .bar.before { background: var(--gray); }
+  .bar .out { position: absolute; left: 100%; padding-left: 8px; color: var(--text); }
+  .links { margin-top: 14px; font-size: 14px; }
+  .links a { margin-right: 14px; }
+
+  /* 전체 목록 */
+  .group { margin-bottom: 26px; }
+  .group h3 { font-size: 17px; margin: 0 0 10px; }
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .mini { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+          text-decoration: none; color: var(--text); display: block; }
+  .mini:hover { border-color: var(--green); }
+  .mini .num { font-size: 12px; color: var(--sub); }
+  .mini b { display: block; font-size: 15px; margin: 2px 0; }
+  .mini span { font-size: 14px; color: var(--sub); }
+
+  footer { padding: 32px 0 56px; color: var(--sub); font-size: 14px; border-top: 1px solid var(--line); margin-top: 24px; }
+
+  @media (max-width: 640px) {
+    header { padding: 40px 0 24px; }
+    .stats { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .stat { padding: 12px 10px; }
+    .stat b { font-size: 22px; }
+    .stat span { font-size: 12px; }
+    .pss, .cards { grid-template-columns: 1fr; }
+    .case { padding: 18px; }
+    .row { grid-template-columns: 84px 1fr; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <span class="tag">비전공 직장인 · Claude Code 실습 기록</span>
+  <h1>반복되는 일을 찾아<br>AI와 함께 자동화합니다</h1>
+  <p class="lead">엑셀 취합부터 고객 리뷰 응대, 문서 챗봇, AI 직원 팀까지. 직접 만들고 숫자로 확인한 업무 자동화 20개를 정리했어요. 모든 숫자는 실행해서 확인한 것만 적었습니다.</p>
+  <div class="stats">
+    <div class="stat"><b>20개</b><span>만든 자동화 (실습 19 + 내 프로젝트 1)</span></div>
+    <div class="stat"><b>2개</b><span>인터넷에 공개한 웹서비스</span></div>
+    <div class="stat"><b>매일</b><span>스스로 도는 알림 봇 운영 중</span></div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section>
+  <h2>대표 사례 3개</h2>
+  <p class="h2-sub">1인 사업을 'AI 작은 회사'로 꾸린다면 — CS 팀 2개, 콘텐츠 팀 1개</p>
+
+  <!-- 사례 1 -->
+  <article class="case">
+    <div class="team">CS 팀 · 고객 리뷰 응대</div>
+    <h3>AI에게 '업무 매뉴얼'을 쥐여 주자 답글이 한 모양으로</h3>
+    <p class="summary">리뷰 15개에 감정·답글·담당팀·긴급도를 명령 한 줄로 붙이고, 오늘 연락해야 할 고객 5명을 바로 찾게 했어요.</p>
+    <div class="pss">
+      <div><b>문제</b>그냥 "답글 써 줘"라고 하면 매번 결과가 달라지고, 빈칸·가짜 연락처가 섞였어요.</div>
+      <div><b>해결</b>역할·판단 기준·금지사항·출력형식을 적은 템플릿을 만들고 결과를 보며 3번 고쳤어요.</div>
+      <div><b>결과</b>답글 항상 1개 · 빈칸 0개 · 여러 번 돌려도 같은 분류 · 긴급 리뷰 5건</div>
+    </div>
+    <div class="chart">
+      <div class="chart-title">같은 리뷰 3개를 3번씩 맡겼을 때, 답글 길이 (0~1,000자)</div>
+      <div class="row"><span>템플릿 없이</span><div class="track"><div class="bar before" style="left:45.7%;width:45.5%">457~912자</div></div></div>
+      <div class="row"><span>템플릿 사용</span><div class="track"><div class="bar" style="left:8.3%;width:2.1%"><span class="out">83~104자</span></div></div></div>
+    </div>
+    <div class="links">
+      <a href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/15_프롬프트템플릿">코드 보기</a>
+      <a href="https://github.com/akkayaja/claude-code-practice-kit/blob/main/20_포트폴리오정리/사례/사례1_리뷰답글템플릿.md">사례 자세히</a>
+    </div>
+  </article>
+
+  <!-- 사례 2 -->
+  <article class="case">
+    <div class="team">CS 팀 · 문의 응답 챗봇</div>
+    <h3>모르면 "문서에 없어요"라고 말하는 규정 챗봇</h3>
+    <p class="summary">규정 문서 5개를 조각 22개로 나눠, 질문에 맞는 조각만 근거로 답하게 했어요. 답마다 근거 문서를 보여 줘요.</p>
+    <div class="pss">
+      <div><b>문제</b>일반 AI는 우리 회사 규정을 몰라서 그럴듯하게 지어낼 위험이 있었어요.</div>
+      <div><b>해결</b>찾은 조각만 보고 답하게 하고, 테스트 질문 9개로 자동 채점했어요. 채점 기준도 함께 점검했어요.</div>
+      <div><b>결과</b>9문항 모두 정답 · 근거 문서 9개 모두 일치 · 문서에 없는 질문엔 지어내지 않음</div>
+    </div>
+    <div class="chart">
+      <div class="chart-title">테스트 9문항 채점</div>
+      <div class="row"><span>처음</span><div class="track"><div class="bar before" style="left:0;width:55.6%">5 / 9</div></div></div>
+      <div class="row"><span>개선 후</span><div class="track"><div class="bar" style="left:0;width:100%">9 / 9</div></div></div>
+    </div>
+    <div class="links">
+      <a href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/16_문서기반AI챗봇">코드 보기</a>
+      <a href="https://github.com/akkayaja/claude-code-practice-kit/blob/main/20_포트폴리오정리/사례/사례2_규정챗봇.md">사례 자세히</a>
+    </div>
+  </article>
+
+  <!-- 사례 3 -->
+  <article class="case">
+    <div class="team">콘텐츠 팀 · 글쓰기</div>
+    <h3>기획자·작가·편집장, AI 편집부 꾸리기</h3>
+    <p class="summary">글 한 편의 기획 → 초안 → 검수 → 수정을 AI 직원 3명에게 나눠 맡기고, 발행 버튼은 사람이 눌러요.</p>
+    <div class="pss">
+      <div><b>문제</b>기획·초안·검수·수정을 사람이 차례로 하고, 검수 기준 6개를 눈으로 확인해야 했어요.</div>
+      <div><b>해결</b>역할별 AI를 자동으로 잇고, 떨어지면 최대 2번 고쳐 재검수. 글자 수는 코드가 정확히 세요.</div>
+      <div><b>결과</b>주제 5개 약 1분 · 글 1편당 약 130원 · 5편 모두 검수 통과</div>
+    </div>
+    <div class="chart">
+      <div class="chart-title">5팀이 동시에 처리한 시간 (0~60초)</div>
+      <div class="row"><span>주제 1</span><div class="track"><div class="bar" style="left:0;width:65%">39초 · 통과</div></div></div>
+      <div class="row"><span>주제 2</span><div class="track"><div class="bar" style="left:0;width:68.3%">41초 · 통과</div></div></div>
+      <div class="row"><span>주제 3</span><div class="track"><div class="bar" style="left:0;width:80%">48초 · 통과</div></div></div>
+      <div class="row"><span>주제 4</span><div class="track"><div class="bar" style="left:0;width:93.3%">56초 · 수정 1번 후 통과</div></div></div>
+      <div class="row"><span>주제 5</span><div class="track"><div class="bar" style="left:0;width:68.3%">41초 · 통과</div></div></div>
+    </div>
+    <div class="links">
+      <a href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/17_AI에이전트워크플로우">코드 보기</a>
+      <a href="https://github.com/akkayaja/claude-code-practice-kit/blob/main/20_포트폴리오정리/사례/사례3_AI편집부.md">사례 자세히</a>
+    </div>
+  </article>
+</section>
+
+<section>
+  <h2>전체 목록</h2>
+  <p class="h2-sub">"이런 것도 되나요?" — 지금까지 만든 나머지 17개예요. 누르면 코드로 이동해요.</p>
+
+  <div class="group">
+    <h3>📁 사무 업무 자동화</h3>
+    <div class="cards">
+      <a class="mini" href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/01_엑셀자동화"><span class="num">01</span><b>엑셀 취합 자동화</b><span>지점 엑셀 6개 합치기·정리·차트를 명령 한 줄로</span></a>
+      <a class="mini" href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/02_보고서자동생성"><span class="num">02</span><b>주간 보고서 자동 생성</b><span>팀 실적 엑셀 5개 → Word 보고서까지 몇 초</span></a>
+      <a class="mini" href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/03_메일분류"><span class="num">03</span><b>업무 메일 분류</b><span>메일 20통 분류 정확도 90% → 100%</span></a>
+      <a class="mini" href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/04_구글시트폼자동화"><span class="num">04</span><b>구글폼 신청 관리</b><span>신청 60건 집계·확인 메일, 수작업 약 1시간 → 자동</span></a>
+      <a class="mini" href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/05_PDF정보추출"><span class="num">05</span><b>PDF 명세서 값 뽑기</b><span>PDF 8장 → 엑셀, 정답과 56칸 100% 일치</span></a>
+    </div>
+  </div>
+
+  <div class="group">
+    <h3>📊 데이터 분석</h3>
+    <div class="cards">
+      <a class="mini" href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/06_데이터분석리포트"><span class="num">06</span><b>분석 리포트 자동화</b><span>그래프·결론·주의점이 담긴 HTML 리포트를 몇 초 만에</span></a>
+      <a class="mini" href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/07_SQL연습"><span class="num">07</span><b>쇼핑몰 데이터 SQL 분석</b><span>표 3개 · 주문 1,500건을 15가지 질문으로 분석</span></a>
+      <a class="mini" href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/08_대시보드"><span class="num">08</span><b>매출 대시보드</b><span>1년치 1,460줄 → 한눈에 보는 화면 (11월 +21.6%)</span></a>
+      <a class="mini" href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/09_웹크롤링"><span class="num">09</span><b>상품 가격 수집·감시</b><span>상품 45개 수집, 손으로 1시간 넘게 → 1분 안</span></a>
+    </div>
+  </div>
+
+  <div class="group">
+    <h3>🌐 웹·서비스 연결</h3>
+    <div class="cards">
+      <a class="mini" href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/10_Git기초"><span class="num">10</span><b>작업 기록 관리 (Git)</b><span>실수해도 몇 초 만에 되돌리고 GitHub에 기록</span></a>
+      <a class="mini" href="https://onggi-cafe-practice.vercel.app"><span class="num">11</span><b>가게 소개 웹페이지</b><span>외주 없이 하루 만에 공개 (사이트 바로 보기)</span></a>
+      <a class="mini" href="https://book-rental-practice.vercel.app"><span class="num">12</span><b>로그인·DB 도서 대여 앱</b><span>회원가입·대여·반납·관리자 화면 (앱 바로 보기)</span></a>
+      <a class="mini" href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/13_API연결"><span class="num">13</span><b>기상청 날씨 API 연결</b><span>7개 도시 날씨 기록, 약 10분 → 몇 초</span></a>
+    </div>
+  </div>
+
+  <div class="group">
+    <h3>🤖 자동 실행 · AI 도구</h3>
+    <div class="cards">
+      <a class="mini" href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/14_자동실행봇"><span class="num">14</span><b>아침 브리핑 메일 봇</b><span>아침 정리 약 10분 → 0분 (정해진 시각에 자동 발송)</span></a>
+      <a class="mini" href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/18_스킬과MCP만들기"><span class="num">18</span><b>AI 업무 스킬 + DB 연결</b><span>"지난달 매출 알려 줘" 한마디로 조회, DB 수정 시도 5/5 차단</span></a>
+      <a class="mini" href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/19_문서화연습"><span class="num">19</span><b>도구 설명서 만들기</b><span>설명서만 보고 처음 보는 사람도 같은 결과(1년 25.4억 원)</span></a>
+      <a class="mini" href="https://github.com/akkayaja/claude-code-practice-kit/tree/main/내프로젝트_옷차림알림"><span class="num">내 프로젝트</span><b>내일 옷차림 알림 봇</b><span>매일 저녁 8시, 시간별 기온·옷차림·우산 알림 메일</span></a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="wrap">
+  실습 데이터는 모두 연습용 가짜 데이터예요. · 전체 코드와 학습일지: <a href="https://github.com/akkayaja/claude-code-practice-kit">github.com/akkayaja/claude-code-practice-kit</a>
+</footer>
+
+</body>
+</html>
