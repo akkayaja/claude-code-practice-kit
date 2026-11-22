@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>연습상사 규정 챗봇</title>
+<style>
+  body { margin: 0; font-family: -apple-system, "Apple SD Gothic Neo", sans-serif; background: #f2f4f7; }
+  .틀 { max-width: 640px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; }
+  header { background: #2f5d8a; color: white; padding: 14px 18px; }
+  header h1 { margin: 0; font-size: 18px; }
+  header p { margin: 4px 0 0; font-size: 13px; opacity: .85; }
+  #대화창 { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .말풍선 { max-width: 80%; padding: 10px 14px; border-radius: 14px; line-height: 1.5; white-space: pre-wrap; }
+  .나 { align-self: flex-end; background: #2f5d8a; color: white; border-bottom-right-radius: 4px; }
+  .봇 { align-self: flex-start; background: white; border-bottom-left-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .근거 { display: block; margin-top: 6px; font-size: 12px; color: #5b6b7b; }
+  .근거.없음 { color: #b5651d; }
+  form { display: flex; gap: 8px; padding: 12px; background: white; border-top: 1px solid #dde2e8; }
+  input { flex: 1; padding: 10px 12px; font-size: 15px; border: 1px solid #c9d1da; border-radius: 10px; }
+  button { padding: 10px 16px; font-size: 15px; border: 0; border-radius: 10px; background: #2f5d8a; color: white; cursor: pointer; }
+  button:disabled { opacity: .5; }
+  .예시 { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 10px; }
+  .예시 button { background: #e3eaf2; color: #2f5d8a; font-size: 13px; padding: 6px 10px; }
+</style>
+</head>
+<body>
+<div class="틀">
+  <header>
+    <h1>📘 (주)연습상사 규정 챗봇</h1>
+    <p>규정 문서 5개에 있는 내용만 답해요. 문서에 없으면 "없다"고 말해요.</p>
+  </header>
+  <div id="대화창">
+    <div class="말풍선 봇">안녕하세요! 휴가·출장비·보안·복지·재택근무 규정을 물어보세요.</div>
+  </div>
+  <div class="예시">
+    <button type="button">배우자 출산하면 휴가 며칠?</button>
+    <button type="button">부산 출장 숙박비 한도는?</button>
+    <button type="button">주차비 지원 되나요?</button>
+  </div>
+  <form id="입력폼">
+    <input id="질문칸" placeholder="질문을 입력하세요" autocomplete="off">
+    <button id="보내기">보내기</button>
+  </form>
+</div>
+<script>
+  const 대화창 = document.getElementById("대화창");
+  const 질문칸 = document.getElementById("질문칸");
+  const 보내기 = document.getElementById("보내기");
+
+  function 말풍선(글, 누구) {
+    const 칸 = document.createElement("div");
+    칸.className = "말풍선 " + 누구;
+    칸.textContent = 글;
+    대화창.appendChild(칸);
+    대화창.scrollTop = 대화창.scrollHeight;
+    return 칸;
+  }
+
+  async function 묻기(질문) {
+    if (!질문.trim()) return;
+    말풍선(질문, "나");
+    질문칸.value = "";
+    보내기.disabled = true;
+    const 기다림 = 말풍선("규정 찾아보는 중… 📖", "봇");
+    try {
+      const 응답 = await fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 질문 }),
+      });
+      const 결과 = await 응답.json();
+      기다림.textContent = 결과.답;
+      const 근거 = document.createElement("span");
+      근거.className = "근거" + (결과.근거.length ? "" : " 없음");
+      근거.textContent = "📄 근거: " + (결과.근거.length ? 결과.근거.join(", ") : "규정 문서에 없음");
+      기다림.appendChild(근거);
+    } catch (e) {
+      기다림.textContent = "앗, 서버와 연결이 안 돼요. 터미널에서 서버가 켜져 있는지 확인해 주세요.";
+    }
+    보내기.disabled = false;
+    질문칸.focus();
+  }
+
+  document.getElementById("입력폼").addEventListener("submit", (e) => { e.preventDefault(); 묻기(질문칸.value); });
+  document.querySelectorAll(".예시 button").forEach((b) => b.addEventListener("click", () => 묻기(b.textContent)));
+</script>
+</body>
+</html>
