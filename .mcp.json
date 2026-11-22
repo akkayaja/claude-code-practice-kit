@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "shop-db": {
+      "type": "stdio",
+      "command": "18_스킬과MCP만들기/.venv/bin/python",
+      "args": [
+        "18_스킬과MCP만들기/1_shop서버.py"
+      ],
+      "env": {}
+    }
+  }
+}

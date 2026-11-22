@@ -1,0 +1,9 @@
+{
+  "name": "onggi-office",
+  "version": "1.0.0",
+  "description": "온기마켓 사무실 도구 상자: 주간보고 스킬, 리뷰 답글 스킬, shop.db 읽기 전용 조회 MCP (클로드코드 실습키트 18번)",
+  "author": { "name": "akkayaja" },
+  "repository": "https://github.com/akkayaja/claude-code-practice-kit",
+  "license": "MIT",
+  "keywords": ["practice", "skill", "mcp", "korean"]
+}

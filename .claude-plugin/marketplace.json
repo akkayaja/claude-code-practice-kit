@@ -1,0 +1,12 @@
+{
+  "name": "practice-kit",
+  "owner": { "name": "akkayaja" },
+  "description": "클로드코드 실습키트에서 만든 플러그인 모음",
+  "plugins": [
+    {
+      "name": "onggi-office",
+      "source": "./18_스킬과MCP만들기/onggi-office",
+      "description": "주간보고·리뷰 답글 스킬 + shop.db 읽기 전용 조회 MCP"
+    }
+  ]
+}
